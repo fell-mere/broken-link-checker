@@ -40,7 +40,7 @@ public function actionRunCrawl()
     // Set response format to JSON
     Craft::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-    // Push the GenerateSitemapJob to queue
+    // Push the GenerateSitemapJob to queue for generating the sitemap
     Craft::$app->queue->push(new \craigclement\craftbrokenlinks\jobs\GenerateSitemapJob());
 
     // add a message to show that the job was added to the queue

@@ -92,132 +92,121 @@
 
 {# JavaScript logic to handle the scan request and display results #}
 <script>
-    document.getElementById('run-crawl').addEventListener('click', function () {
-        const loading = document.getElementById('loading');
-        const resultsDiv = document.getElementById('results');
-
-        // Show an initial message while the scan starts
-        loading.textContent = 'Scanning... Please wait.';
-
-        // Make a request to trigger the scan
-        fetch('/brokenlinks/run-crawl')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Scan started:', data);
-
-                // If the scan started successfully, show processing message
-                if (data.success) {
-                    loading.textContent = 'Processing... This may take some time.';
-                    resultsDiv.innerHTML = ''; // Clear previous results
-                    pollForResults(); // Start polling for results
-                } else {
-                    resultsDiv.innerHTML = `<p>Error: ${data.message || 'Unknown error'}</p>`;
-                    loading.textContent = '';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                resultsDiv.innerHTML = `<p>Error: ${error.message}</p>`;
-                loading.textContent = '';
-            });
-
-        /**
-         * Polls the server periodically for results
-         */
-        function pollForResults() {
-            let attempts = 0;
-            const maxAttempts = 10; // Stop polling after 10 attempts (adjustable)
-            const pollInterval = 5000; // Check every 5 seconds
-
-            const interval = setInterval(() => {
-                attempts++;
-
-                fetch('/brokenlinks/get-results')
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Checking for results:', data);
-                        console.log("📌 Sitemap URLs:", data.sitemap_urls || "No sitemap URLs found");
-
-                        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-                            // Results are ready, display them and stop polling
-                            clearInterval(interval);
-                            loading.textContent = '';
-                            displayResults(data.data);
-                        
-                            if (data.stillProcessing) {
-                                loading.textContent = `Still processing... (${attempts}/${maxAttempts})`;
-                            } else {
-                                clearInterval(interval);
-                                loading.textContent = '';
-                            }
-                        } else if (attempts >= maxAttempts) {
-                            // Stop polling after max attempts
-                            clearInterval(interval);
-                            loading.textContent = 'Processing took too long. Please check back later.';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching results:', error);
-                        clearInterval(interval);
-                        loading.textContent = 'Error fetching results. Try again later.';
-                    });
-            }, pollInterval);
+    document.addEventListener('DOMContentLoaded', function () {
+        const runCrawlButton = document.getElementById('run-crawl');
+        if (!runCrawlButton) {
+            console.warn('⚠️ Could not find #run-crawl button');
+            return;
         }
 
-        /**
-         * Displays the broken links in a table
-         */
-        function displayResults(links) {
-            resultsDiv.innerHTML = '';
+        console.log('✅ Broken Links plugin JS loaded and DOM ready');
 
-            if (links.length === 0) {
-                resultsDiv.innerHTML = '<p>No broken links found.</p>';
-                return;
+        runCrawlButton.addEventListener('click', function () {
+            console.log('📢 Scan button clicked');
+
+            const loading = document.getElementById('loading');
+            const resultsDiv = document.getElementById('results');
+
+            loading.textContent = 'Scanning... Please wait.';
+
+            fetch('/brokenlinks/run-crawl')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('🚀 Scan started:', data);
+
+                    if (data.success) {
+                        loading.textContent = 'Processing... This may take some time.';
+                        resultsDiv.innerHTML = '';
+                        pollForResults();
+                    } else {
+                        resultsDiv.innerHTML = `<p>Error: ${data.message || 'Unknown error'}</p>`;
+                        loading.textContent = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error starting scan:', error);
+                    resultsDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+                    loading.textContent = '';
+                });
+
+            function pollForResults() {
+                let attempts = 0;
+                const maxAttempts = 10;
+                const pollInterval = 5000;
+
+                const interval = setInterval(() => {
+                    attempts++;
+
+                    fetch('/brokenlinks/get-results')
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(`🔁 Polling attempt ${attempts}:`, data);
+
+                            if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                                displayResults(data.data);
+
+                                if (data.stillProcessing) {
+                                    loading.textContent = `Still processing... (${attempts}/${maxAttempts})`;
+                                } else {
+                                    clearInterval(interval);
+                                    loading.textContent = '✅ Scan complete.';
+                                }
+                            } else if (attempts >= maxAttempts) {
+                                clearInterval(interval);
+                                loading.textContent = 'Processing took too long. Please check back later.';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Error fetching results:', error);
+                            clearInterval(interval);
+                            loading.textContent = 'Error fetching results. Try again later.';
+                        });
+                }, pollInterval);
             }
 
-            const table = document.createElement('table');
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Broken Link</th>
-                        <th>Link Text</th>
-                        <th>Field</th>
-                        <th>Page URL</th>
-                        <th>Entry</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${links
-                        .map(
-                            link => `
-                            <tr>
-                                <td>
-                                    <a href="${link.url}" target="_blank" class="action-link">${link.url}</a>
-                                </td>
-                                <td>${link.linkText || 'N/A'}</td>
-                                <td>${link.field || 'todo'}</td>
-                                <td>
-                                    <a href="${link.pageUrl}" target="_blank" class="action-link">
-                                        ${link.pageUrl.replace("{{ siteUrl }}", '') || '/'}
-                                    </a>
-                                </td>
-                                <td>
-                                    ${
+            function displayResults(links) {
+                resultsDiv.innerHTML = '';
+
+                if (links.length === 0) {
+                    resultsDiv.innerHTML = '<p>No broken links found.</p>';
+                    return;
+                }
+
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Broken Link</th>
+                            <th>Link Text</th>
+                            <th>Field</th>
+                            <th>Page URL</th>
+                            <th>Entry</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${links
+                            .map(
+                                link => `
+                                <tr>
+                                    <td><a href="${link.url}" target="_blank" class="action-link">${link.url}</a></td>
+                                    <td>${link.linkText || 'N/A'}</td>
+                                    <td>${link.field || 'todo'}</td>
+                                    <td><a href="${link.pageUrl}" target="_blank" class="action-link">${link.pageUrl}</a></td>
+                                    <td>${
                                         link.entryUrl
                                             ? `<a href="${link.entryUrl}" target="_blank" class="action-link">${link.entryTitle || 'N/A'}</a>`
                                             : 'N/A'
-                                    }
-                                </td>
-                            </tr>
-                        `
-                        )
-                        .join('')}
-                </tbody>
-            `;
-            resultsDiv.appendChild(table);
-        }
+                                    }</td>
+                                </tr>
+                            `
+                            )
+                            .join('')}
+                    </tbody>
+                `;
+                resultsDiv.appendChild(table);
+            }
+        });
     });
 </script>
-
 
 {% endblock %}
