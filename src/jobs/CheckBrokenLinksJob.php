@@ -66,9 +66,13 @@ class CheckBrokenLinksJob extends BaseJob
             }
         }
 
-        // Store results in cache
-        Craft::$app->cache->set('brokenLinks_results', $brokenLinks, 3600);
-        Craft::info('✅ Successfully stored broken links in cache.', __METHOD__);
+       // Merge with existing cached results
+        $existing = Craft::$app->cache->get('brokenLinks_results') ?? [];
+        $merged = array_merge($existing, $brokenLinks);
+        Craft::$app->cache->set('brokenLinks_results', $merged, 3600);
+
+        Craft::info("✅ Stored " . count($merged) . " total broken links in cache (added " . count($brokenLinks) . " new).", __METHOD__);
+
     }
 
     private function resolveUrl(string $baseUrl, string $relativeUrl): string
