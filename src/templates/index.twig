@@ -92,77 +92,71 @@
 
 {# JavaScript logic to handle the scan request and display results #}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-
-        const runCrawlButton = document.getElementById('run-crawl');
-        const loading = document.getElementById('loading');
-        const resultsDiv = document.getElementById('results');
-
-        if (!runCrawlButton) {
-            return;
-        }
-
-        // retrieve results from cache if available
-
-        fetch('/brokenlinks/get-results')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && Array.isArray(data.data)) {
-                console.log('🔁 Loaded previous results from cache');
-                displayResults(data.data);
-
-                if (data.stillProcessing) {
-                    loading.textContent = 'Still processing...';
-                } else {
-                    loading.textContent = 'Previous scan loaded.';
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Failed to fetch cached results:', error);
-        });
-
-
-        runCrawlButton.addEventListener('click', function () {
-
-            loading.textContent = 'Scanning... Please wait.';
-
-            fetch('/brokenlinks/run-crawl')
+    Garnish.$doc.ready(function () {
+        if (!Craft.cp) return;
+    
+        Craft.cp.on('ready', function () {
+            const runCrawlButton = document.getElementById('run-crawl');
+            const loading = document.getElementById('loading');
+            const resultsDiv = document.getElementById('results');
+    
+            if (!runCrawlButton) return;
+    
+            // ✅ Fetch results on CP load (even after navigation)
+            fetch('/brokenlinks/get-results')
                 .then(response => response.json())
                 .then(data => {
-                    console.log('🚀 Scan started:', data);
-
-                    if (data.success) {
-                        loading.textContent = 'Processing... This may take some time.';
-                        resultsDiv.innerHTML = '';
-                        pollForResults();
-                    } else {
-                        resultsDiv.innerHTML = `<p>Error: ${data.message || 'Unknown error'}</p>`;
-                        loading.textContent = '';
+                    if (data.success && Array.isArray(data.data)) {
+                        console.log('🔁 Loaded previous results from cache');
+                        displayResults(data.data);
+                        loading.textContent = data.stillProcessing ? 'Still processing...' : '✅ Previous scan loaded.';
                     }
                 })
                 .catch(error => {
-                    console.error('❌ Error starting scan:', error);
-                    resultsDiv.innerHTML = `<p>Error: ${error.message}</p>`;
-                    loading.textContent = '';
+                    console.error('❌ Failed to fetch cached results:', error);
                 });
-
+    
+            runCrawlButton.addEventListener('click', function () {
+                console.log('📢 Scan button clicked');
+                loading.textContent = 'Scanning... Please wait.';
+                resultsDiv.innerHTML = '';
+    
+                fetch('/brokenlinks/run-crawl')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('🚀 Scan started:', data);
+    
+                        if (data.success) {
+                            loading.textContent = 'Processing... This may take some time.';
+                            pollForResults();
+                        } else {
+                            resultsDiv.innerHTML = `<p>Error: ${data.message || 'Unknown error'}</p>`;
+                            loading.textContent = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Error starting scan:', error);
+                        resultsDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+                        loading.textContent = '';
+                    });
+            });
+    
             function pollForResults() {
                 let attempts = 0;
                 const maxAttempts = 10;
                 const pollInterval = 5000;
-
+    
                 const interval = setInterval(() => {
                     attempts++;
-
+    
                     fetch('/brokenlinks/get-results')
                         .then(response => response.json())
                         .then(data => {
                             console.log(`🔁 Polling attempt ${attempts}:`, data);
-
+    
                             if (data.success && Array.isArray(data.data) && data.data.length > 0) {
                                 displayResults(data.data);
-
+    
                                 if (data.stillProcessing) {
                                     loading.textContent = `Still processing... (${attempts}/${maxAttempts})`;
                                 } else {
@@ -181,15 +175,15 @@
                         });
                 }, pollInterval);
             }
-
+    
             function displayResults(links) {
                 resultsDiv.innerHTML = '';
-
+    
                 if (links.length === 0) {
                     resultsDiv.innerHTML = '<p>No broken links found.</p>';
                     return;
                 }
-
+    
                 const table = document.createElement('table');
                 table.innerHTML = `
                     <thead>
@@ -202,29 +196,26 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${links
-                            .map(
-                                link => `
-                                <tr>
-                                    <td><a href="${link.url}" target="_blank" class="action-link">${link.url}</a></td>
-                                    <td>${link.linkText || 'N/A'}</td>
-                                    <td>${link.field || 'todo'}</td>
-                                    <td><a href="${link.pageUrl}" target="_blank" class="action-link">${link.pageUrl}</a></td>
-                                    <td>${
-                                        link.entryUrl
-                                            ? `<a href="${link.entryUrl}" target="_blank" class="action-link">${link.entryTitle || 'N/A'}</a>`
-                                            : 'N/A'
-                                    }</td>
-                                </tr>
-                            `
-                            )
-                            .join('')}
+                        ${links.map(link => `
+                            <tr>
+                                <td><a href="${link.url}" target="_blank" class="action-link">${link.url}</a></td>
+                                <td>${link.linkText || 'N/A'}</td>
+                                <td>${link.field || 'todo'}</td>
+                                <td><a href="${link.pageUrl}" target="_blank" class="action-link">${link.pageUrl}</a></td>
+                                <td>${
+                                    link.entryUrl
+                                        ? `<a href="${link.entryUrl}" target="_blank" class="action-link">${link.entryTitle || 'N/A'}</a>`
+                                        : 'N/A'
+                                }</td>
+                            </tr>
+                        `).join('')}
                     </tbody>
                 `;
                 resultsDiv.appendChild(table);
             }
         });
     });
+    
 </script>
 
 {% endblock %}
