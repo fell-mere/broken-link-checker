@@ -93,19 +93,37 @@
 {# JavaScript logic to handle the scan request and display results #}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+
         const runCrawlButton = document.getElementById('run-crawl');
+        const loading = document.getElementById('loading');
+        const resultsDiv = document.getElementById('results');
+
         if (!runCrawlButton) {
-            console.warn('⚠️ Could not find #run-crawl button');
             return;
         }
 
-        console.log('✅ Broken Links plugin JS loaded and DOM ready');
+        // retrieve results from cache if available
+
+        fetch('/brokenlinks/get-results')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && Array.isArray(data.data)) {
+                console.log('🔁 Loaded previous results from cache');
+                displayResults(data.data);
+
+                if (data.stillProcessing) {
+                    loading.textContent = 'Still processing...';
+                } else {
+                    loading.textContent = 'Previous scan loaded.';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Failed to fetch cached results:', error);
+        });
+
 
         runCrawlButton.addEventListener('click', function () {
-            console.log('📢 Scan button clicked');
-
-            const loading = document.getElementById('loading');
-            const resultsDiv = document.getElementById('results');
 
             loading.textContent = 'Scanning... Please wait.';
 
