@@ -34,7 +34,7 @@ class GenerateSitemapJob extends BaseJob
         Craft::info("Sitemap generated. Found " . count($urls) . " URLs.", __METHOD__);
 
         // Split into batches for checking broken links
-        $batchSize = 10; // Process 10 links per job
+        $batchSize = 20; // Process 20 links per job
         $batches = array_chunk($urls, $batchSize);
 
         foreach ($batches as $batch) {
