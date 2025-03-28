@@ -43,6 +43,9 @@ public function actionRunCrawl()
     // Push the GenerateSitemapJob to queue
     Craft::$app->queue->push(new \craigclement\craftbrokenlinks\jobs\GenerateSitemapJob());
 
+    // add a message to show that the job was added to the queue
+    Craft::info("Sitemap generation job added to the queue.", __METHOD__);
+
     // Return JSON response confirming jobs were added to queue
     return $this->asJson([
         'success' => true,
