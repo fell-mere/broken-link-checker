@@ -81,11 +81,15 @@ public function actionRunCrawl()
         $brokenLinks = Craft::$app->cache->get('brokenLinks_results');
         $sitemapUrls = Craft::$app->cache->get('brokenLinks_urls'); // Fetch sitemap URLs
 
+        $queue = Craft::$app->queue;
+        $stillProcessing = $queue->getTotalJobs() > 0;
+
         return $this->asJson([
             'success' => (bool) $brokenLinks,
             'message' => $brokenLinks ? 'Broken links retrieved successfully.' : 'Results are not ready yet. Try again later.',
             'data' => $brokenLinks ?? [],
             'sitemap_urls' => $sitemapUrls ?? [], // Include sitemap URLs in response
+            'stillProcessing' => $stillProcessing, // Indicate if jobs are still processing
         ]);
     }
     

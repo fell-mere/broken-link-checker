@@ -143,6 +143,13 @@
                             clearInterval(interval);
                             loading.textContent = '';
                             displayResults(data.data);
+                        
+                            if (data.stillProcessing) {
+                                loading.textContent = `Still processing... (${attempts}/${maxAttempts})`;
+                            } else {
+                                clearInterval(interval);
+                                loading.textContent = '';
+                            }
                         } else if (attempts >= maxAttempts) {
                             // Stop polling after max attempts
                             clearInterval(interval);
