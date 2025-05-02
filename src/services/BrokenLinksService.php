@@ -6,6 +6,7 @@ namespace craigclement\craftbrokenlinks\services;
 use Craft;                           // Craft CMS core class
 use GuzzleHttp\Client;              // Guzzle HTTP client for making web requests
 use yii\base\Component;             // Base class for creating Craft services
+use craigclement\craftbrokenlinks\records\BrokenLinkRecord; // Import BrokenLinkRecord for database interactions
 
 /**
  * Service to check for broken links in Craft CMS entries.
@@ -13,7 +14,7 @@ use yii\base\Component;             // Base class for creating Craft services
 class BrokenLinksService extends Component
 {
 
-        /**
+    /**
      * Get all site URLs from Craft CMS entries.
      *
      * @return array List of all entry URLs.
@@ -169,5 +170,45 @@ class BrokenLinksService extends Component
             new \GuzzleHttp\Psr7\Uri($baseUrl),
             new \GuzzleHttp\Psr7\Uri($relativeUrl)
         );
+    }
+
+    /**
+     * Save a broken link record to the database.
+     *
+     * @param array $data The data to save.
+     * @return bool Whether the save was successful.
+     */
+    public function saveBrokenLink(array $data): bool
+    {
+        $record = new BrokenLinkRecord();
+        $record->setAttributes($data, false);
+
+        return $record->save();
+    }
+
+    /**
+     * Retrieve all broken link records from the database.
+     *
+     * @return array List of broken link records.
+     */
+    public function getBrokenLinks(): array
+    {
+        return BrokenLinkRecord::find()->all();
+    }
+
+    /**
+     * Delete a broken link record from the database.
+     *
+     * @param int $id The ID of the record to delete.
+     * @return bool Whether the deletion was successful.
+     */
+    public function deleteBrokenLink(int $id): bool
+    {
+        $record = BrokenLinkRecord::findOne($id);
+        if ($record) {
+            return $record->delete();
+        }
+
+        return false;
     }
 }

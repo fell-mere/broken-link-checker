@@ -1,0 +1,39 @@
+{% extends "_layouts/cp" %}
+
+{% block head %}
+    {{ view.registerAssetBundle("craigclement\\craftbrokenlinks\\assets\\BrokenLinksAsset") }}
+{% endblock %}
+
+{% block content %}
+    <h1>Broken Links</h1>
+
+    <form method="post" action="{{ url('broken-links/rescan') }}">
+        {{ csrfInput() }}
+        <button type="submit" class="btn">Rescan</button>
+    </form>
+
+    <table class="data">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Error</th>
+                <th>Last Checked</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for link in brokenLinks %}
+                <tr>
+                    <td><a href="{{ link.url }}" target="_blank">{{ link.url }}</a></td>
+                    <td>{{ link.status }}</td>
+                    <td>{{ link.error }}</td>
+                    <td>{{ link.lastChecked|date('Y-m-d H:i:s') }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4">No broken links found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

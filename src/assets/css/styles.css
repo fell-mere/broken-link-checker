@@ -1,1 +1,16 @@
-/* add plugin css from index twig and clean up */
+/* Placeholder for plugin-specific styles */
+
+table.data {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table.data th, table.data td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+table.data th {
+    background-color: #f4f4f4;
+    text-align: left;
+}

@@ -5,95 +5,49 @@ namespace craigclement\craftbrokenlinks\controllers;
 
 // Import necessary Craft CMS and Yii components
 use craft\web\Controller;
-use craigclement\craftbrokenlinks\Plugin;
 use Craft;
+use yii\web\Response;
 
 // Define the main controller class for managing broken links
 class BrokenLinksController extends Controller
 {
-    // Allow anonymous access to all actions in this controller
-    protected array|int|bool $allowAnonymous = true;
+    // Ensure only authenticated users can access this controller
+    protected array|int|bool $allowAnonymous = false;
 
     /**
      * **Index Action: Displays the main plugin page in the Control Panel.**
      * 
-     * This action is triggered when visiting the `/brokenlinks` route in the CP.
+     * This action is triggered when visiting the `/broken-links` route in the CP.
      * 
-     * @return string The rendered template.
+     * @return Response The rendered template.
      */
-    public function actionIndex(): string
+    public function actionIndex(): Response
     {
-        // Render the `brokenlinks/index` template (Twig file)
-        return $this->renderTemplate('brokenlinks/index');
-    }
+        $brokenLinks = Craft::$app->get('brokenLinksService')->getBrokenLinks();
 
-
-    /**
- * **Run Crawl Action: Executes the link checking process asynchronously using a queue.**
- * 
- * - This action is triggered when accessing `/brokenlinks/run-crawl`.
- * - It fetches all site URLs and batches them into jobs for asynchronous processing.
- * - The queue jobs will check links in smaller batches to prevent timeouts.
- */
-public function actionRunCrawl()
-{
-    // Set response format to JSON
-    Craft::$app->response->format = \yii\web\Response::FORMAT_JSON;
-
-    // Push the GenerateSitemapJob to queue for generating the sitemap
-    Craft::$app->queue->push(new \craigclement\craftbrokenlinks\jobs\GenerateSitemapJob());
-
-    // add a message to show that the job was added to the queue
-    Craft::info("Sitemap generation job added to the queue.", __METHOD__);
-
-    // Return JSON response confirming jobs were added to queue
-    return $this->asJson([
-        'success' => true,
-        'message' => 'Sitemap generation started. Checking for broken links will begin soon.',
-    ]);
-}
-
-
-        /**
-     * **Queue Test Job Action: Confirms queue processing works.**
-     * 
-     * This action adds a simple test job to the queue.
-     */
-    public function actionQueueTestJob()
-    {
-        Craft::$app->queue->push(new \craigclement\craftbrokenlinks\jobs\TestJob());
-
-        return $this->asJson([
-            'success' => true,
-            'message' => 'Test job added to the queue.',
+        return $this->renderTemplate('broken-links/index', [
+            'brokenLinks' => $brokenLinks,
         ]);
     }
 
     /**
- * **Get Results Action: Fetches processed broken links from cache.**
- *
- * - This action is triggered when accessing `/brokenlinks/get-results`.
- * - It retrieves the cached results and returns them as JSON.
- */
-    public function actionGetResults()
+     * **Rescan Action: Initiates a rescan for broken links.**
+     * 
+     * This action is triggered when accessing `/broken-links/rescan`.
+     * It requires a POST request and a valid CSRF token.
+     * 
+     * @return Response Redirects to the posted URL after initiating the rescan.
+     */
+    public function actionRescan(): Response
     {
-        // Set response format to JSON
-        Craft::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $this->requirePostRequest();
+        $this->requireCsrfToken();
 
-        // Retrieve cached broken links and sitemap URLs
-        $brokenLinks = Craft::$app->cache->get('brokenLinks_results');
-        $sitemapUrls = Craft::$app->cache->get('brokenLinks_urls'); // Fetch sitemap URLs
+        // Trigger a rescan job
+        Craft::$app->queue->push(new \craigclement\craftbrokenlinks\jobs\CheckBrokenLinksJob());
 
-        $queue = Craft::$app->queue;
-        $stillProcessing = $queue->getTotalJobs() > 0;
+        Craft::$app->session->setNotice('Rescan started. Results will be updated shortly.');
 
-        return $this->asJson([
-            'success' => (bool) $brokenLinks,
-            'message' => $brokenLinks ? 'Broken links retrieved successfully.' : 'Results are not ready yet. Try again later.',
-            'data' => $brokenLinks ?? [],
-            'sitemap_urls' => $sitemapUrls ?? [], // Include sitemap URLs in response
-            'stillProcessing' => $stillProcessing, // Indicate if jobs are still processing
-        ]);
+        return $this->redirectToPostedUrl();
     }
-    
 }
