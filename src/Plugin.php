@@ -72,4 +72,18 @@ class Plugin extends BasePlugin
         // Log a message indicating that the plugin has been successfully loaded
         Craft::info('Broken Links plugin loaded', __METHOD__);
     }
+
+    protected function createSettingsModel(): ?\craft\base\Model
+    {
+        return new \craft\base\Model([
+            'batchSize' => 10, // Default batch size
+        ]);
+    }
+
+    public function settingsHtml(): ?string
+    {
+        return \Craft::$app->getView()->renderTemplate('brokenlinks/settings', [
+            'settings' => $this->getSettings(),
+        ]);
+    }
 }
