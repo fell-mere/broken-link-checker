@@ -9,7 +9,9 @@ use craft\base\Plugin as BasePlugin;
 use craft\events\RegisterUrlRulesEvent; // register a route in the front-end
 use craft\web\UrlManager; // register a route in the control panel
 use craft\events\RegisterCpNavItemsEvent; // register a navigation item in the control panel
-use craft\web\twig\variables\Cp; // acces to control panel functions
+use craft\web\twig\variables\Cp; // access to control panel functions
+use craft\console\Application as ConsoleApplication;
+use craft\console\controllers\ResaveController;
 use yii\base\Event;
 
 // Define the main plugin class, extending Craft's BasePlugin
@@ -17,6 +19,9 @@ class Plugin extends BasePlugin
 {
     // Define the plugin's schema version for migrations and updates
     public string $schemaVersion = '1.0.0';
+    
+    // Whether the plugin has a settings component
+    public bool $hasCpSettings = true;
 
     // This method runs when the plugin is initialized
     public function init(): void
@@ -31,18 +36,16 @@ class Plugin extends BasePlugin
             function (RegisterUrlRulesEvent $event) {
                 // Define a CP route for the Broken Links plugin index page
                 $event->rules['brokenlinks'] = 'brokenlinks/broken-links/index';
+                $event->rules['brokenlinks/start-scan'] = 'brokenlinks/broken-links/start-scan';
+                $event->rules['brokenlinks/scan-status'] = 'brokenlinks/broken-links/scan-status';
+                $event->rules['brokenlinks/clear-data'] = 'brokenlinks/broken-links/clear-data';
             }
         );
 
-        //Register a front-end route for the crawling action
-        Event::on(
-            UrlManager::class,                        // Target the front-end URL manager
-            UrlManager::EVENT_REGISTER_SITE_URL_RULES, // Listen for front-end route registration
-            function (RegisterUrlRulesEvent $event) {
-                // Define a front-end route for triggering the crawl action
-                $event->rules['brokenlinks/run-crawl'] = 'brokenlinks/broken-links/run-crawl';
-            }
-        );
+        // Register console commands if in console request context
+        if (Craft::$app instanceof ConsoleApplication) {
+            $this->registerConsoleCommands();
+        }
 
         // Add a navigation item to the Craft Control Panel
         Event::on(
@@ -60,5 +63,25 @@ class Plugin extends BasePlugin
 
         // Log a message indicating that the plugin has been successfully loaded
         Craft::info('Broken Links plugin loaded', __METHOD__);
+    }
+    
+    /**
+     * Register console commands for this plugin.
+     */
+    private function registerConsoleCommands(): void
+    {
+        // Add our console commands to the application's controller map
+        Craft::$app->controllerMap['broken-links'] = 'craigclement\craftbrokenlinks\console\controllers\BrokenLinksController';
+    }
+
+    /**
+     * Installation migration.
+     * @return array Array of migration classes to run during installation.
+     */
+    public function defineMigrations(): array
+    {
+        return [
+            'Install' => 'craigclement\craftbrokenlinks\migrations\Install',
+        ];
     }
 }

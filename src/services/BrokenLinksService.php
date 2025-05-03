@@ -3,9 +3,13 @@
 namespace craigclement\craftbrokenlinks\services;
 
 // Import required libraries
-use Craft;                           // Craft CMS core class
-use GuzzleHttp\Client;              // Guzzle HTTP client for making web requests
-use yii\base\Component;             // Base class for creating Craft services
+use Craft;
+use yii\base\Component;
+use craigclement\craftbrokenlinks\records\BrokenLinkRecord;
+use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
+use craigclement\craftbrokenlinks\models\BrokenLink;
+use craigclement\craftbrokenlinks\models\ScanHistory;
+use craigclement\craftbrokenlinks\jobs\GenerateSitemapJob;
 
 /**
  * Service to check for broken links in Craft CMS entries.
@@ -13,137 +17,112 @@ use yii\base\Component;             // Base class for creating Craft services
 class BrokenLinksService extends Component
 {
     /**
-     * Crawl the entire website for broken links.
+     * Start a new scan for broken links using queue jobs.
      *
-     * @param string $baseUrl The base URL of the website.
-     * @return array List of broken links found.
+     * @param string|null $baseUrl The base URL of the website.
+     * @param bool $forceFullScan Whether to force a full scan of all entries.
+     * @param int $batchSize Maximum number of entries to process in a batch.
+     * @return int The ID of the newly created scan.
      */
-    public function crawlSite(string $baseUrl): array
+    public function startScan(?string $baseUrl = null, bool $forceFullScan = false, int $batchSize = 100): int
     {
-        // Create an HTTP client with a 5-second timeout
-        $client = new Client(['timeout' => 5]); 
-        $brokenLinks = [];  // Store broken links
-        $visitedUrls = [];  // Track visited pages to avoid duplicates
-
-        // Log the start of the crawling process
-        Craft::info("Starting crawl for base URL: $baseUrl", __METHOD__);
-
-        try {
-            // Get all pages (entries) from Craft CMS
-            $entries = Craft::$app->elements->createElementQuery(\craft\elements\Entry::class)
-                ->with(['*'])   // Load all related fields
-                ->all();        // Fetch all results
-
-            Craft::info("Found " . count($entries) . " entries to crawl.", __METHOD__);
-
-            // Loop through each entry (page)
-            foreach ($entries as $entry) {
-                $url = $entry->getUrl();  // Get the page's URL
-
-                // Skip if no URL or already visited
-                if (!$url || in_array($url, $visitedUrls)) {
-                    Craft::info("Skipping entry ID: {$entry->id} - URL: $url", __METHOD__);
-                    continue; 
-                }
-
-                // Mark the URL as visited
-                $visitedUrls[] = $url;
-
-                // Check all links on the current page
-                $this->crawlPage($client, $url, $brokenLinks, $visitedUrls, $entry);
-            }
-
-            // Return the list of broken links found
-            return $brokenLinks;
-        } catch (\Throwable $e) {
-            // Log and rethrow any errors encountered
-            Craft::error("Error during crawl: " . $e->getMessage(), __METHOD__);
-            throw $e;
+        // Create a new scan history record
+        $scanRecord = new ScanHistoryRecord();
+        $scanRecord->startTime = new \DateTime();
+        $scanRecord->status = ScanHistoryRecord::STATUS_PENDING;
+        $scanRecord->save();
+        
+        // Get the base URL if not provided
+        if (!$baseUrl) {
+            $baseUrl = Craft::$app->getSites()->getPrimarySite()->getBaseUrl();
         }
+        
+        // Push the sitemap generation job to the queue
+        Craft::$app->queue->push(new GenerateSitemapJob([
+            'scanId' => $scanRecord->id,
+            'baseUrl' => $baseUrl,
+            'forceFullScan' => $forceFullScan,
+            'batchSize' => $batchSize,
+        ]));
+        
+        // Return the scan ID
+        return $scanRecord->id;
     }
-
+    
     /**
-     * Check all links on a specific page.
+     * Get the latest scan history.
      *
-     * @param Client $client HTTP client for making requests.
-     * @param string $url The page URL being crawled.
-     * @param array &$brokenLinks Reference to the broken links list.
-     * @param array &$visitedUrls Reference to the visited URLs list.
-     * @param \craft\elements\Entry|null $entry Optional entry for context.
+     * @return ScanHistory|null The latest scan history model or null if none exists.
      */
-    private function crawlPage(Client $client, string $url, array &$brokenLinks, array &$visitedUrls, $entry = null): void
+    public function getLatestScan(): ?ScanHistory
+    {
+        $record = ScanHistoryRecord::find()
+            ->orderBy(['startTime' => SORT_DESC])
+            ->one();
+            
+        if (!$record) {
+            return null;
+        }
+        
+        // Convert the record to a model
+        $model = new ScanHistory();
+        $model->setAttributes($record->getAttributes(), false);
+        
+        return $model;
+    }
+    
+    /**
+     * Get the latest scan results (broken links).
+     *
+     * @param int|null $limit Maximum number of results to return.
+     * @param int $offset Offset for pagination.
+     * @return array Array of BrokenLink models.
+     */
+    public function getLatestBrokenLinks(?int $limit = null, int $offset = 0): array
+    {
+        $query = BrokenLinkRecord::find()
+            ->orderBy(['lastScanned' => SORT_DESC]);
+            
+        if ($limit !== null) {
+            $query->limit($limit)->offset($offset);
+        }
+        
+        $records = $query->all();
+        $models = [];
+        
+        foreach ($records as $record) {
+            $model = new BrokenLink();
+            $model->setAttributes($record->getAttributes(), false);
+            $models[] = $model;
+        }
+        
+        return $models;
+    }
+    
+    /**
+     * Count the total number of broken links.
+     *
+     * @return int Total count of broken links.
+     */
+    public function countBrokenLinks(): int
+    {
+        return BrokenLinkRecord::find()->count();
+    }
+    
+    /**
+     * Delete all broken links and scan history.
+     *
+     * @return bool Whether the operation was successful.
+     */
+    public function clearAllData(): bool
     {
         try {
-            // Fetch the page's content
-            $response = $client->get($url);
-            $html = $response->getBody()->getContents();
-
-            // Extract all <a> tags and their URLs from the page
-            preg_match_all('/<a\s+(?:[^>]*?\s+)?href="([^"]*)".*?>(.*?)<\/a>/is', $html, $matches);
-            $urls = $matches[1] ?? [];      // Extracted links
-            $linkTexts = $matches[2] ?? []; // Extracted link text
-
-            // Loop through each found link
-            foreach ($urls as $index => $link) {
-                // Create the absolute URL based on the current page's URL
-                $absoluteUrl = $this->resolveUrl($url, $link);
-                $linkText = strip_tags(trim($linkTexts[$index] ?? ''));
-
-                // Skip if not an external or internal HTTP/HTTPS link
-                if (!preg_match('/^https?:\/\//', $absoluteUrl)) {
-                    continue;
-                }
-
-                try {
-                    // Send a HEAD request to check if the link works
-                    $response = $client->head($absoluteUrl);
-
-                    // Check if the link is broken (error code 400 and above)
-                    if ($response->getStatusCode() >= 400) {
-                        $brokenLinks[] = [
-                            'url' => $absoluteUrl,
-                            'status' => 'Broken (' . $response->getStatusCode() . ')',
-                            'entryId' => $entry?->id,
-                            'entryTitle' => $entry?->title ?? $entry?->slug ?? 'N/A',
-                            'entryUrl' => $entry ? $entry->getCpEditUrl() : null,
-                            'linkText' => $linkText, 
-                            'field' => 'todo',  // Placeholder for future field data
-                            'pageUrl' => $url,
-                        ];
-                    }
-                } catch (\Throwable $e) {
-                    // Add unreachable links to the broken list
-                    $brokenLinks[] = [
-                        'url' => $absoluteUrl,
-                        'status' => 'Unreachable',
-                        'error' => $e->getMessage(),
-                        'entryId' => $entry?->id,
-                        'entryTitle' => $entry?->title ?? $entry?->slug ?? 'N/A',
-                        'entryUrl' => $entry ? $entry->getCpEditUrl() : null,
-                        'linkText' => $linkText,
-                        'field' => 'todo',  // Placeholder for future field data
-                        'pageUrl' => $url,
-                    ];
-                }
-            }
+            BrokenLinkRecord::deleteAll();
+            ScanHistoryRecord::deleteAll();
+            return true;
         } catch (\Throwable $e) {
-            // Log any errors during crawling
-            Craft::error("Error crawling page URL: $url - " . $e->getMessage(), __METHOD__);
+            Craft::error('Error clearing broken links data: ' . $e->getMessage(), __METHOD__);
+            return false;
         }
-    }
-
-    /**
-     * Resolve a relative link into an absolute URL.
-     *
-     * @param string $baseUrl The page's base URL.
-     * @param string $relativeUrl The link's relative URL.
-     * @return string The resolved absolute URL.
-     */
-    private function resolveUrl(string $baseUrl, string $relativeUrl): string
-    {
-        return (string) \GuzzleHttp\Psr7\UriResolver::resolve(
-            new \GuzzleHttp\Psr7\Uri($baseUrl),
-            new \GuzzleHttp\Psr7\Uri($relativeUrl)
-        );
     }
 }
