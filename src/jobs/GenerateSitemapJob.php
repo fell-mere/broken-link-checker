@@ -44,6 +44,12 @@ class GenerateSitemapJob extends BaseJob
         }
         
         $scanRecord->status = ScanHistoryRecord::STATUS_RUNNING;
+        
+        // Reset totalBrokenLinks to 0 when forcing a full scan
+        if ($this->forceFullScan) {
+            $scanRecord->totalBrokenLinks = 0;
+        }
+        
         $scanRecord->save();
         
         try {
@@ -98,6 +104,7 @@ class GenerateSitemapJob extends BaseJob
                         'baseUrl' => $this->baseUrl,
                         'totalBatches' => count($batches),
                         'batchIndex' => $jobIndex,
+                        'forceFullScan' => $this->forceFullScan,
                     ]));
                     
                     $jobIndex++;

@@ -41,6 +41,11 @@ class CheckBrokenLinksJob extends BaseJob
     public $batchIndex = 0;
 
     /**
+     * @var bool Whether this is part of a forced full scan
+     */
+    public $forceFullScan = false;
+
+    /**
      * @inheritdoc
      */
     public function execute($queue): void
@@ -93,7 +98,16 @@ class CheckBrokenLinksJob extends BaseJob
             $transaction = Craft::$app->getDb()->beginTransaction();
             try {
                 $freshScanRecord = ScanHistoryRecord::findOne($this->scanId);
-                $freshScanRecord->totalBrokenLinks += $brokenLinkCount;
+                
+                // If this is a forced full scan and the last batch, get the total from the database
+                if ($this->forceFullScan && $this->batchIndex == $this->totalBatches - 1) {
+                    // Get the actual count of broken links from the database
+                    $totalBrokenLinks = BrokenLinkRecord::find()->count();
+                    $freshScanRecord->totalBrokenLinks = $totalBrokenLinks;
+                } else {
+                    // Otherwise just increment the total
+                    $freshScanRecord->totalBrokenLinks += $brokenLinkCount;
+                }
                 
                 // If this is the last batch, mark as completed
                 if ($this->batchIndex == $this->totalBatches - 1) {

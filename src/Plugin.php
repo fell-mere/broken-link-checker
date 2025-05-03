@@ -12,6 +12,10 @@ use craft\events\RegisterCpNavItemsEvent; // register a navigation item in the c
 use craft\web\twig\variables\Cp; // access to control panel functions
 use craft\console\Application as ConsoleApplication;
 use craft\console\controllers\ResaveController;
+use craft\services\Dashboard;
+use craft\events\RegisterComponentTypesEvent;
+use craft\i18n\PhpMessageSource;
+use craigclement\craftbrokenlinks\widgets\BrokenLinksWidget;
 use yii\base\Event;
 
 // Define the main plugin class, extending Craft's BasePlugin
@@ -29,6 +33,15 @@ class Plugin extends BasePlugin
         // Call the parent class's initialization method
         parent::init();
 
+        // Register translations
+        Craft::$app->i18n->translations['broken-links'] = [
+            'class' => PhpMessageSource::class,
+            'sourceLanguage' => 'en',
+            'basePath' => __DIR__ . '/translations',
+            'allowOverrides' => true,
+            'forceTranslation' => true,
+        ];
+
         // Register a Control Panel (CP) route for the plugin's index page
         Event::on(
             UrlManager::class,                        // Target the CP URL manager
@@ -39,6 +52,16 @@ class Plugin extends BasePlugin
                 $event->rules['brokenlinks/start-scan'] = 'brokenlinks/broken-links/start-scan';
                 $event->rules['brokenlinks/scan-status'] = 'brokenlinks/broken-links/scan-status';
                 $event->rules['brokenlinks/clear-data'] = 'brokenlinks/broken-links/clear-data';
+                $event->rules['brokenlinks/export'] = 'brokenlinks/broken-links/export';
+            }
+        );
+
+        // Register dashboard widget
+        Event::on(
+            Dashboard::class,
+            Dashboard::EVENT_REGISTER_WIDGET_TYPES,
+            function(RegisterComponentTypesEvent $event) {
+                $event->types[] = BrokenLinksWidget::class;
             }
         );
 

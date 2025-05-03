@@ -4,12 +4,6 @@
 {# Set the page title displayed in the browser tab and Craft control panel header #}
 {% set title = "Broken Links"|t('broken-links') %}
 
-{% block actionButton %}
-    <div class="buttons right">
-        <button id="start-scan" class="btn submit">{{ "Start New Scan"|t('broken-links') }}</button>
-    </div>
-{% endblock %}
-
 {% block content %}
     <div class="broken-links-container">
         
@@ -89,6 +83,16 @@
                 <h2>{{ "Broken Links"|t('broken-links') }} 
                     <span class="count-badge">{{ totalBrokenLinks }}</span>
                 </h2>
+                
+                <div class="export-buttons">
+                    <a href="{{ cpUrl('brokenlinks/export', {'format': 'csv'}) }}" class="btn secondary" download>
+                        <span data-icon="download"></span> {{ "Export CSV"|t('broken-links') }}
+                    </a>
+                    <a href="{{ cpUrl('brokenlinks/export', {'format': 'json'}) }}" class="btn secondary" download>
+                        <span data-icon="download"></span> {{ "Export JSON"|t('broken-links') }}
+                    </a>
+                </div>
+                
                 <div class="tableview">
                     <table class="data fullwidth">
                         <thead>
@@ -276,6 +280,12 @@
         padding: 48px 0;
         text-align: center;
         color: #8f98a3;
+    }
+    
+    .export-buttons {
+        margin: 12px 0 16px;
+        display: flex;
+        gap: 8px;
     }
     
     table.data {

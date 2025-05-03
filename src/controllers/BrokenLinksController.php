@@ -8,6 +8,7 @@ use craft\web\Controller;
 use craigclement\craftbrokenlinks\services\BrokenLinksService;
 use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 use Craft;
+use yii\web\Response;
 
 // Define the main controller class for managing broken links
 class BrokenLinksController extends Controller
@@ -208,5 +209,87 @@ class BrokenLinksController extends Controller
                 'message' => 'Error clearing data: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * **Export Action: Exports broken links data as CSV or JSON.**
+     *
+     * This action is triggered when accessing the `/brokenlinks/export` route.
+     * It returns a downloadable file with broken links data.
+     *
+     * @return Response The exported file response
+     */
+    public function actionExport(): Response
+    {
+        // Get export format from request
+        $format = Craft::$app->request->getQueryParam('format', 'csv');
+        
+        // Create an instance of the BrokenLinksService
+        $service = new BrokenLinksService();
+        
+        // Get all broken links without limit
+        $brokenLinks = $service->getLatestBrokenLinks(null);
+        
+        // Define file name and mime type based on format
+        $fileName = 'broken-links-' . date('Y-m-d-His');
+        $mimeType = 'text/plain';
+        $content = '';
+        
+        if ($format === 'json') {
+            $fileName .= '.json';
+            $mimeType = 'application/json';
+            
+            // Convert broken links to array format
+            $data = [];
+            foreach ($brokenLinks as $link) {
+                $data[] = [
+                    'url' => $link->url,
+                    'status' => $link->status,
+                    'statusCode' => $link->statusCode,
+                    'linkText' => $link->linkText,
+                    'field' => $link->field,
+                    'pageUrl' => $link->pageUrl,
+                    'entryId' => $link->entryId,
+                    'entryTitle' => $link->entryTitle,
+                    'lastScanned' => $link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : null,
+                ];
+            }
+            
+            $content = json_encode($data, JSON_PRETTY_PRINT);
+        } else {
+            // Default to CSV
+            $fileName .= '.csv';
+            $mimeType = 'text/csv';
+            
+            // Create CSV header
+            $csv = ['"URL","Status","Status Code","Link Text","Field","Page URL","Entry ID","Entry Title","Last Scanned"'];
+            
+            // Add broken links data
+            foreach ($brokenLinks as $link) {
+                $row = [
+                    '"' . str_replace('"', '""', $link->url) . '"',
+                    '"' . str_replace('"', '""', $link->status) . '"',
+                    '"' . str_replace('"', '""', $link->statusCode) . '"',
+                    '"' . str_replace('"', '""', $link->linkText) . '"',
+                    '"' . str_replace('"', '""', $link->field) . '"',
+                    '"' . str_replace('"', '""', $link->pageUrl) . '"',
+                    '"' . str_replace('"', '""', $link->entryId) . '"',
+                    '"' . str_replace('"', '""', $link->entryTitle) . '"',
+                    '"' . ($link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : '') . '"',
+                ];
+                $csv[] = implode(',', $row);
+            }
+            
+            $content = implode("\n", $csv);
+        }
+        
+        // Send the file as a download
+        $response = Craft::$app->getResponse();
+        $response->content = $content;
+        $response->format = Response::FORMAT_RAW;
+        $response->headers->set('Content-Type', $mimeType);
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        
+        return $response;
     }
 }

@@ -1,0 +1,13 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.textField({
+    label: "Number of links to show"|t('broken-links'),
+    instructions: "Enter the maximum number of broken links to display in the widget"|t('broken-links'),
+    id: 'limit',
+    name: 'limit',
+    value: widget.limit,
+    type: 'number',
+    min: 1,
+    max: 50,
+    errors: widget.getErrors('limit')
+}) }}
