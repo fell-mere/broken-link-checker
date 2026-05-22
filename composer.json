@@ -1,6 +1,6 @@
 {
-  "name": "craig-clement/craft-brokenlinks",
-  "description": "broken links checker",
+  "name": "fell-mere/craft-brokenlinks",
+  "description": "Scans your Craft CMS site for broken links and displays results in the Control Panel.",
   "type": "craft-plugin",
   "license": "proprietary",
   "support": {
@@ -22,8 +22,9 @@
   "extra": {
     "handle": "brokenlinks",
     "name": "Broken Links",
-    "developer": "Craig Clement",
-    "documentationUrl": ""
+    "developer": "Fell Mere",
+    "developerUrl": "https://github.com/fell-mere",
+    "documentationUrl": "https://github.com/fell-mere/broken-link-checker"
   },
   "scripts": {
     "check-cs": "ecs check --ansi",

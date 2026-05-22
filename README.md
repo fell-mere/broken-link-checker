@@ -23,7 +23,7 @@ A Craft CMS plugin that scans your site for broken links by crawling each entry'
 ```bash
 cd /path/to/my-project
 
-composer require craig-clement/craft-brokenlinks
+composer require fell-mere/craft-brokenlinks
 
 ./craft plugin/install brokenlinks
 ```
