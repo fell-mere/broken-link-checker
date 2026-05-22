@@ -33,10 +33,9 @@ class Install extends Migration
             'uid' => $this->uid(),
         ]);
 
-        // Create an index on url for faster lookups
-        $this->createIndex(null, '{{%brokenlinks_brokenlinks}}', 'url(191)');
-        
-        // Create an index on entryId for faster lookups
+        // Composite unique index — enables atomic upsert and prevents duplicate records
+        $this->createIndex(null, '{{%brokenlinks_brokenlinks}}', ['url(191)', 'pageUrl(191)'], true);
+
         $this->createIndex(null, '{{%brokenlinks_brokenlinks}}', 'entryId');
 
         // Create the scan history table

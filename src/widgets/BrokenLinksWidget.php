@@ -1,75 +1,50 @@
 <?php
-/**
- * Broken Links plugin for Craft CMS
- *
- * A widget that displays a summary of broken links
- */
 
 namespace craigclement\craftbrokenlinks\widgets;
 
 use Craft;
 use craft\base\Widget;
-use craigclement\craftbrokenlinks\services\BrokenLinksService;
-use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
+use craigclement\craftbrokenlinks\Plugin;
 
 class BrokenLinksWidget extends Widget
 {
-    /**
-     * @var int Number of broken links to display in the widget
-     */
-    public $limit = 5;
-    
-    /**
-     * @inheritdoc
-     */
+    public int $limit = 5;
+
+    private ?int $_totalBrokenLinks = null;
+
     public static function displayName(): string
     {
         return Craft::t('broken-links', 'Broken Links');
     }
 
-    /**
-     * @inheritdoc
-     */
     public static function icon(): ?string
     {
         return '@appicons/link.svg';
     }
 
-    /**
-     * @inheritdoc
-     */
     public function getTitle(): string
     {
         return $this->displayName();
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getSubtitle(): ?string 
+    public function getSubtitle(): ?string
     {
-        $service = new BrokenLinksService();
-        $totalBrokenLinks = $service->countBrokenLinks();
-        
-        if ($totalBrokenLinks > 0) {
-            return Craft::t('broken-links', '{count} broken', ['count' => $totalBrokenLinks]);
+        $total = $this->getCachedTotal();
+
+        if ($total > 0) {
+            return Craft::t('broken-links', '{count} broken', ['count' => $total]);
         }
-        
+
         return null;
     }
 
-    /**
-     * @inheritdoc
-     */
     public function getBodyHtml(): ?string
     {
-        // Include our assets bundle
-        $service = new BrokenLinksService();
+        $service = Plugin::getInstance()->brokenLinks;
         $latestScan = $service->getLatestScan();
         $brokenLinks = $service->getLatestBrokenLinks($this->limit);
-        $totalBrokenLinks = $service->countBrokenLinks();
+        $totalBrokenLinks = $this->getCachedTotal();
 
-        // Render the widget template
         return Craft::$app->getView()->renderTemplate(
             'brokenlinks/widgets/broken-links-widget',
             [
@@ -82,26 +57,26 @@ class BrokenLinksWidget extends Widget
         );
     }
 
-    /**
-     * @inheritdoc
-     */
     public function getSettingsHtml(): ?string
     {
         return Craft::$app->getView()->renderTemplate(
             'brokenlinks/widgets/broken-links-widget-settings',
-            [
-                'widget' => $this
-            ]
+            ['widget' => $this]
         );
     }
 
-    /**
-     * @inheritdoc
-     */
     public function rules(): array
     {
         $rules = parent::rules();
         $rules[] = [['limit'], 'integer', 'min' => 1];
         return $rules;
+    }
+
+    private function getCachedTotal(): int
+    {
+        if ($this->_totalBrokenLinks === null) {
+            $this->_totalBrokenLinks = Plugin::getInstance()->brokenLinks->countBrokenLinks();
+        }
+        return $this->_totalBrokenLinks;
     }
 }

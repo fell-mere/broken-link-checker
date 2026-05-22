@@ -30,8 +30,11 @@ class BrokenLinksService extends Component
         $scanRecord = new ScanHistoryRecord();
         $scanRecord->startTime = new \DateTime();
         $scanRecord->status = ScanHistoryRecord::STATUS_PENDING;
-        $scanRecord->save();
-        
+
+        if (!$scanRecord->save()) {
+            throw new \RuntimeException('Failed to create scan record: ' . implode(', ', $scanRecord->getFirstErrors()));
+        }
+
         // Get the base URL if not provided
         if (!$baseUrl) {
             $baseUrl = Craft::$app->getSites()->getPrimarySite()->getBaseUrl();

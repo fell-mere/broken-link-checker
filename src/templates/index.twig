@@ -112,12 +112,12 @@
                                         <a href="{{ link.url }}" target="_blank" title="{{ link.url }}">{{ link.url }}</a>
                                     </td>
                                     <td>
-                                        <span class="status-pill unreachable">{{ link.status }}{% if link.statusCode %} ({{ link.statusCode }}){% endif %}</span>
+                                        <span class="status-pill {{ link.status|lower }}">{{ link.status }}{% if link.statusCode %} ({{ link.statusCode }}){% endif %}</span>
                                     </td>
                                     <td>
                                         {{ link.linkText ?: 'N/A' }}
                                     </td>
-                                    <td>{{ link.field ?: 'todo' }}</td>
+                                    <td>{{ link.field ?: '–' }}</td>
                                     <td>
                                         <a href="{{ link.pageUrl }}" target="_blank" title="{{ link.pageUrl }}">
                                             {{ link.pageUrl|replace({'http://': '', 'https://': ''}) }}
@@ -244,7 +244,8 @@
         line-height: 1.5;
     }
     
-    .status-pill.unreachable {
+    .status-pill.unreachable,
+    .status-pill.broken {
         background-color: #FEECDC;
         color: #C05621;
     }
@@ -368,7 +369,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-Token': '{{ craft.app.request.csrfToken }}'
+                'X-CSRF-Token': Craft.csrfTokenValue
             },
             body: JSON.stringify({
                 forceFullScan: forceFullScan,
@@ -423,7 +424,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-Token': '{{ craft.app.request.csrfToken }}'
+                'X-CSRF-Token': Craft.csrfTokenValue
             }
         })
         .then(response => {

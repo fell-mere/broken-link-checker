@@ -1,42 +1,25 @@
 <?php
 
-// Define the namespace for the controller
 namespace craigclement\craftbrokenlinks\controllers;
 
-// Import necessary Craft CMS and Yii components
-use craft\web\Controller;
-use craigclement\craftbrokenlinks\services\BrokenLinksService;
-use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 use Craft;
+use craft\web\Controller;
+use craigclement\craftbrokenlinks\Plugin;
+use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 use yii\web\Response;
 
-// Define the main controller class for managing broken links
 class BrokenLinksController extends Controller
 {
-    // Allow anonymous access to actions that should be accessible without logging in
     protected array|int|bool $allowAnonymous = [];
 
-    /**
-     * **Index Action: Displays the main plugin page in the Control Panel.**
-     *
-     * This action is triggered when visiting the `/brokenlinks` route in the CP.
-     *
-     * @return string The rendered template.
-     */
     public function actionIndex(): string
     {
-        $service = new BrokenLinksService();
-        
-        // Get the latest scan history
+        $service = Plugin::getInstance()->brokenLinks;
+
         $latestScan = $service->getLatestScan();
-        
-        // Get the latest broken links (limited to 1000 for performance)
         $brokenLinks = $service->getLatestBrokenLinks(1000);
-        
-        // Count total broken links
         $totalBrokenLinks = $service->countBrokenLinks();
-        
-        // Render the template with the data
+
         return $this->renderTemplate('brokenlinks/index', [
             'latestScan' => $latestScan,
             'brokenLinks' => $brokenLinks,
@@ -44,109 +27,74 @@ class BrokenLinksController extends Controller
         ]);
     }
 
-    /**
-     * **Run Scan Action: Starts a new scan for broken links.**
-     *
-     * This action is triggered when accessing the `/brokenlinks/start-scan` route.
-     * It returns the results as a JSON response.
-     */
-    public function actionStartScan()
+    public function actionStartScan(): Response
     {
-        // Require POST request for this action
         $this->requirePostRequest();
-        
-        // Set the response format to JSON
-        Craft::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        
-        // Get parameters from the request
+
         $baseUrl = Craft::$app->request->getBodyParam('url');
         $forceFullScan = (bool)Craft::$app->request->getBodyParam('forceFullScan', false);
         $batchSize = (int)Craft::$app->request->getBodyParam('batchSize', 100);
-        
-        // Validate the batch size
+
         if ($batchSize < 1) {
             $batchSize = 100;
         }
-        
-        // Get the base URL for the primary site if not provided
+
         if (!$baseUrl) {
             $baseUrl = Craft::$app->getSites()->getPrimarySite()->getBaseUrl();
         }
 
-        // Validate the URL
         if (!filter_var($baseUrl, FILTER_VALIDATE_URL)) {
             return $this->asJson([
                 'success' => false,
                 'message' => 'Invalid URL provided.',
-            ], 400);
+            ]);
         }
-        
+
         try {
-            // Create an instance of the BrokenLinksService
-            $service = new BrokenLinksService();
-            
-            // Start a new scan
-            $scanId = $service->startScan($baseUrl, $forceFullScan, $batchSize);
-            
-            // Return a successful JSON response
+            $scanId = Plugin::getInstance()->brokenLinks->startScan($baseUrl, $forceFullScan, $batchSize);
+
             return $this->asJson([
                 'success' => true,
                 'message' => 'Scan started successfully. Check the queue to monitor progress.',
                 'scanId' => $scanId,
             ]);
         } catch (\Throwable $e) {
-            // Log any errors encountered during the scan
             Craft::error('Error starting scan: ' . $e->getMessage(), __METHOD__);
-            
-            // Return an error response
+
             return $this->asJson([
                 'success' => false,
                 'message' => 'Error starting scan: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
-    /**
-     * **Get Scan Status Action: Retrieves the status of a scan.**
-     *
-     * This action is triggered when accessing the `/brokenlinks/scan-status` route.
-     * It returns the scan status as a JSON response.
-     */
-    public function actionScanStatus()
+    public function actionScanStatus(): Response
     {
-        // Set the response format to JSON
-        Craft::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        
-        // Get the scan ID from the request
         $scanId = Craft::$app->request->getQueryParam('scanId');
-        
+
         if (!$scanId) {
-            // If no scan ID provided, get the latest scan
-            $service = new BrokenLinksService();
-            $scan = $service->getLatestScan();
-            
+            $scan = Plugin::getInstance()->brokenLinks->getLatestScan();
+
             if (!$scan) {
                 return $this->asJson([
                     'success' => false,
                     'message' => 'No scan found.',
                 ]);
             }
-            
+
             $scanId = $scan->id;
         }
-        
+
         try {
-            // Find the scan record
             $scanRecord = ScanHistoryRecord::findOne($scanId);
-            
+
             if (!$scanRecord) {
                 return $this->asJson([
                     'success' => false,
                     'message' => 'Scan not found.',
                 ]);
             }
-            
-            // Return the scan status
+
             return $this->asJson([
                 'success' => true,
                 'status' => $scanRecord->status,
@@ -158,88 +106,50 @@ class BrokenLinksController extends Controller
                 'isFailed' => $scanRecord->status === ScanHistoryRecord::STATUS_FAILED,
                 'isRunning' => in_array($scanRecord->status, [
                     ScanHistoryRecord::STATUS_PENDING,
-                    ScanHistoryRecord::STATUS_RUNNING
+                    ScanHistoryRecord::STATUS_RUNNING,
                 ]),
             ]);
         } catch (\Throwable $e) {
-            // Log any errors
             Craft::error('Error getting scan status: ' . $e->getMessage(), __METHOD__);
-            
-            // Return an error response
+
             return $this->asJson([
                 'success' => false,
                 'message' => 'Error getting scan status: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
-    /**
-     * **Clear Data Action: Clears all saved broken links data.**
-     *
-     * This action is triggered when accessing the `/brokenlinks/clear-data` route.
-     * It returns the result as a JSON response.
-     */
-    public function actionClearData()
+    public function actionClearData(): Response
     {
-        // Require POST request for this action
         $this->requirePostRequest();
-        
-        // Set the response format to JSON
-        Craft::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        
+
         try {
-            // Create an instance of the BrokenLinksService
-            $service = new BrokenLinksService();
-            
-            // Clear all data
-            $success = $service->clearAllData();
-            
-            // Return the result
+            $success = Plugin::getInstance()->brokenLinks->clearAllData();
+
             return $this->asJson([
                 'success' => $success,
                 'message' => $success ? 'All broken links data cleared successfully.' : 'Failed to clear data.',
             ]);
         } catch (\Throwable $e) {
-            // Log any errors
             Craft::error('Error clearing data: ' . $e->getMessage(), __METHOD__);
-            
-            // Return an error response
+
             return $this->asJson([
                 'success' => false,
                 'message' => 'Error clearing data: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
-    /**
-     * **Export Action: Exports broken links data as CSV or JSON.**
-     *
-     * This action is triggered when accessing the `/brokenlinks/export` route.
-     * It returns a downloadable file with broken links data.
-     *
-     * @return Response The exported file response
-     */
     public function actionExport(): Response
     {
-        // Get export format from request
         $format = Craft::$app->request->getQueryParam('format', 'csv');
-        
-        // Create an instance of the BrokenLinksService
-        $service = new BrokenLinksService();
-        
-        // Get all broken links without limit
-        $brokenLinks = $service->getLatestBrokenLinks(null);
-        
-        // Define file name and mime type based on format
+        $brokenLinks = Plugin::getInstance()->brokenLinks->getLatestBrokenLinks(null);
+
         $fileName = 'broken-links-' . date('Y-m-d-His');
-        $mimeType = 'text/plain';
-        $content = '';
-        
+
         if ($format === 'json') {
             $fileName .= '.json';
-            $mimeType = 'application/json';
-            
-            // Convert broken links to array format
+
             $data = [];
             foreach ($brokenLinks as $link) {
                 $data[] = [
@@ -254,42 +164,39 @@ class BrokenLinksController extends Controller
                     'lastScanned' => $link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : null,
                 ];
             }
-            
+
             $content = json_encode($data, JSON_PRETTY_PRINT);
+            $mimeType = 'application/json';
         } else {
-            // Default to CSV
             $fileName .= '.csv';
-            $mimeType = 'text/csv';
-            
-            // Create CSV header
-            $csv = ['"URL","Status","Status Code","Link Text","Field","Page URL","Entry ID","Entry Title","Last Scanned"'];
-            
-            // Add broken links data
+
+            $fh = fopen('php://temp', 'r+');
+            fputcsv($fh, ['URL', 'Status', 'Status Code', 'Link Text', 'Field', 'Page URL', 'Entry ID', 'Entry Title', 'Last Scanned']);
             foreach ($brokenLinks as $link) {
-                $row = [
-                    '"' . str_replace('"', '""', $link->url) . '"',
-                    '"' . str_replace('"', '""', $link->status) . '"',
-                    '"' . str_replace('"', '""', $link->statusCode) . '"',
-                    '"' . str_replace('"', '""', $link->linkText) . '"',
-                    '"' . str_replace('"', '""', $link->field) . '"',
-                    '"' . str_replace('"', '""', $link->pageUrl) . '"',
-                    '"' . str_replace('"', '""', $link->entryId) . '"',
-                    '"' . str_replace('"', '""', $link->entryTitle) . '"',
-                    '"' . ($link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : '') . '"',
-                ];
-                $csv[] = implode(',', $row);
+                fputcsv($fh, [
+                    $link->url,
+                    $link->status,
+                    $link->statusCode,
+                    $link->linkText,
+                    $link->field,
+                    $link->pageUrl,
+                    $link->entryId,
+                    $link->entryTitle,
+                    $link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : '',
+                ]);
             }
-            
-            $content = implode("\n", $csv);
+            rewind($fh);
+            $content = stream_get_contents($fh);
+            fclose($fh);
+            $mimeType = 'text/csv';
         }
-        
-        // Send the file as a download
+
         $response = Craft::$app->getResponse();
         $response->content = $content;
         $response->format = Response::FORMAT_RAW;
         $response->headers->set('Content-Type', $mimeType);
         $response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
-        
+
         return $response;
     }
 }
