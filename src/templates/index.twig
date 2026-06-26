@@ -51,7 +51,7 @@
             <button id="start-scan" class="btn submit">{{ "Start New Scan"|t('broken-links') }}</button>
             <button id="force-scan" class="btn">{{ "Force Full Scan"|t('broken-links') }}</button>
             <button id="show-advanced" class="btn secondary">{{ "Advanced Options"|t('broken-links') }}</button>
-            <a href="{{ cpUrl('utilities/queue-manager') }}" class="btn secondary" target="_blank">{{ "View Queue"|t('broken-links') }}</a>
+            <a href="{{ cpUrl('utilities/queue-manager') }}" class="btn secondary" target="_blank" rel="noopener noreferrer">{{ "View Queue"|t('broken-links') }}</a>
             <div class="flex-spacer"></div>
             <button id="clear-data" class="btn delete">{{ "Clear All Data"|t('broken-links') }}</button>
             <div id="loading" class="loading-text"></div>
@@ -109,7 +109,11 @@
                             {% for link in brokenLinks %}
                                 <tr>
                                     <td>
-                                        <a href="{{ link.url }}" target="_blank" title="{{ link.url }}">{{ link.url }}</a>
+                                        {% if link.url starts with 'http://' or link.url starts with 'https://' %}
+                                            <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" title="{{ link.url }}">{{ link.url }}</a>
+                                        {% else %}
+                                            {{ link.url }}
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <span class="status-pill {{ link.status|lower }}">{{ link.status }}{% if link.statusCode %} ({{ link.statusCode }}){% endif %}</span>
@@ -119,13 +123,17 @@
                                     </td>
                                     <td>{{ link.field ?: '–' }}</td>
                                     <td>
-                                        <a href="{{ link.pageUrl }}" target="_blank" title="{{ link.pageUrl }}">
-                                            {{ link.pageUrl|replace({'http://': '', 'https://': ''}) }}
-                                        </a>
+                                        {% if link.pageUrl starts with 'http://' or link.pageUrl starts with 'https://' %}
+                                            <a href="{{ link.pageUrl }}" target="_blank" rel="noopener noreferrer" title="{{ link.pageUrl }}">
+                                                {{ link.pageUrl|replace({'http://': '', 'https://': ''}) }}
+                                            </a>
+                                        {% else %}
+                                            {{ link.pageUrl }}
+                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if link.entryId %}
-                                            <a href="{{ cpUrl('entries/edit/' ~ link.entryId) }}" target="_blank">{{ link.entryTitle ?: 'N/A' }}</a>
+                                            <a href="{{ cpUrl('entries/edit/' ~ link.entryId) }}" target="_blank" rel="noopener noreferrer">{{ link.entryTitle ?: 'N/A' }}</a>
                                         {% else %}
                                             N/A
                                         {% endif %}

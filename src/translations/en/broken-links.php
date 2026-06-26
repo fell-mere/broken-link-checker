@@ -6,6 +6,9 @@
  */
 
 return [
+    // Permissions
+    'Manage broken links' => 'Manage broken links',
+
     // Main plugin strings
     'Broken Links' => 'Broken Links',
     'Start New Scan' => 'Start New Scan',

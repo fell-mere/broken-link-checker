@@ -3,10 +3,10 @@
 namespace craigclement\craftbrokenlinks\console\controllers;
 
 use Craft;
-use yii\console\Controller;
-use yii\console\ExitCode;
 use craigclement\craftbrokenlinks\Plugin;
 use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
+use yii\console\Controller;
+use yii\console\ExitCode;
 
 /**
  * Command-line controller for Broken Link Checker plugin
@@ -40,7 +40,7 @@ class BrokenLinksController extends Controller
         $this->stdout('Force full scan: ' . ($this->forceFullScan ? 'Yes' : 'No (only scanning updated entries)') . "\n");
         $this->stdout("Batch size: {$this->batchSize}\n");
 
-        $scanId = Plugin::getInstance()->brokenLinks->startScan($this->baseUrl, $this->forceFullScan, $this->batchSize);
+        $scanId = Plugin::getInstance()->getBrokenLinks()->startScan($this->baseUrl, $this->forceFullScan, $this->batchSize);
 
         $this->stdout("Scan started with ID: {$scanId}\n");
         $this->stdout("Added to queue for processing.\n");
@@ -93,7 +93,7 @@ class BrokenLinksController extends Controller
     public function actionStatus(?int $scanId = null): int
     {
         if ($scanId === null) {
-            $scan = Plugin::getInstance()->brokenLinks->getLatestScan();
+            $scan = Plugin::getInstance()->getBrokenLinks()->getLatestScan();
             if (!$scan) {
                 $this->stderr("No scans found.\n");
                 return ExitCode::DATAERR;
@@ -130,7 +130,14 @@ class BrokenLinksController extends Controller
     public function actionClearData(): int
     {
         $this->stdout("Clearing all broken links data...\n");
-        $success = Plugin::getInstance()->brokenLinks->clearAllData();
+        $service = Plugin::getInstance()->getBrokenLinks();
+
+        if ($service->hasActiveScan()) {
+            $this->stderr("A scan is currently in progress. Wait for it to finish before clearing data.\n");
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        $success = $service->clearAllData();
 
         if ($success) {
             $this->stdout("All broken links data cleared successfully.\n");

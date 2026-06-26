@@ -2,14 +2,13 @@
 
 namespace craigclement\craftbrokenlinks\services;
 
-// Import required libraries
 use Craft;
-use yii\base\Component;
-use craigclement\craftbrokenlinks\records\BrokenLinkRecord;
-use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
+use craigclement\craftbrokenlinks\jobs\GenerateSitemapJob;
 use craigclement\craftbrokenlinks\models\BrokenLink;
 use craigclement\craftbrokenlinks\models\ScanHistory;
-use craigclement\craftbrokenlinks\jobs\GenerateSitemapJob;
+use craigclement\craftbrokenlinks\records\BrokenLinkRecord;
+use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
+use yii\base\Component;
 
 /**
  * Service to check for broken links in Craft CMS entries.
@@ -109,16 +108,36 @@ class BrokenLinksService extends Component
      */
     public function countBrokenLinks(): int
     {
-        return BrokenLinkRecord::find()->count();
+        return (int) BrokenLinkRecord::find()->count();
     }
-    
+
+    /**
+     * Whether a scan is currently pending or running.
+     */
+    public function hasActiveScan(): bool
+    {
+        return ScanHistoryRecord::find()
+            ->where(['status' => [
+                ScanHistoryRecord::STATUS_PENDING,
+                ScanHistoryRecord::STATUS_RUNNING,
+            ]])
+            ->exists();
+    }
+
     /**
      * Delete all broken links and scan history.
+     *
+     * Refuses to run while a scan is in progress — clearing the scan record
+     * out from under a running job would leave it unable to finalize.
      *
      * @return bool Whether the operation was successful.
      */
     public function clearAllData(): bool
     {
+        if ($this->hasActiveScan()) {
+            return false;
+        }
+
         try {
             BrokenLinkRecord::deleteAll();
             ScanHistoryRecord::deleteAll();

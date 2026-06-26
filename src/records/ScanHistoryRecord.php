@@ -12,6 +12,7 @@ use craft\db\ActiveRecord;
  * @property \DateTime|null $endTime
  * @property int $totalUrlsScanned
  * @property int $totalBrokenLinks
+ * @property int $completedBatches
  * @property string $status
  * @property \DateTime $dateCreated
  * @property \DateTime $dateUpdated

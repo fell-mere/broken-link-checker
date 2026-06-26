@@ -40,7 +40,7 @@ class BrokenLinksWidget extends Widget
 
     public function getBodyHtml(): ?string
     {
-        $service = Plugin::getInstance()->brokenLinks;
+        $service = Plugin::getInstance()->getBrokenLinks();
         $latestScan = $service->getLatestScan();
         $brokenLinks = $service->getLatestBrokenLinks($this->limit);
         $totalBrokenLinks = $this->getCachedTotal();
@@ -75,7 +75,7 @@ class BrokenLinksWidget extends Widget
     private function getCachedTotal(): int
     {
         if ($this->_totalBrokenLinks === null) {
-            $this->_totalBrokenLinks = Plugin::getInstance()->brokenLinks->countBrokenLinks();
+            $this->_totalBrokenLinks = Plugin::getInstance()->getBrokenLinks()->countBrokenLinks();
         }
         return $this->_totalBrokenLinks;
     }

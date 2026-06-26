@@ -3,8 +3,8 @@
 namespace craigclement\craftbrokenlinks\jobs;
 
 use Craft;
-use craft\queue\BaseJob;
 use craft\elements\Entry;
+use craft\queue\BaseJob;
 use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 
 /**

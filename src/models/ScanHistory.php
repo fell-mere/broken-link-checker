@@ -12,13 +12,14 @@ class ScanHistory extends Model
     public mixed $endTime = null;
     public int $totalUrlsScanned = 0;
     public int $totalBrokenLinks = 0;
+    public int $completedBatches = 0;
     public string $status = ScanHistoryRecord::STATUS_PENDING;
 
     public function rules(): array
     {
         return [
             [['startTime', 'status'], 'required'],
-            [['totalUrlsScanned', 'totalBrokenLinks'], 'integer'],
+            [['totalUrlsScanned', 'totalBrokenLinks', 'completedBatches'], 'integer'],
             ['status', 'string'],
         ];
     }

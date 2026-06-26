@@ -12,9 +12,23 @@ class BrokenLinksController extends Controller
 {
     protected array|int|bool $allowAnonymous = [];
 
+    /**
+     * @inheritdoc
+     */
+    public function beforeAction($action): bool
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
+        $this->requirePermission(Plugin::PERMISSION_MANAGE);
+
+        return true;
+    }
+
     public function actionIndex(): string
     {
-        $service = Plugin::getInstance()->brokenLinks;
+        $service = Plugin::getInstance()->getBrokenLinks();
 
         $latestScan = $service->getLatestScan();
         $brokenLinks = $service->getLatestBrokenLinks(1000);
@@ -51,7 +65,7 @@ class BrokenLinksController extends Controller
         }
 
         try {
-            $scanId = Plugin::getInstance()->brokenLinks->startScan($baseUrl, $forceFullScan, $batchSize);
+            $scanId = Plugin::getInstance()->getBrokenLinks()->startScan($baseUrl, $forceFullScan, $batchSize);
 
             return $this->asJson([
                 'success' => true,
@@ -73,7 +87,7 @@ class BrokenLinksController extends Controller
         $scanId = Craft::$app->request->getQueryParam('scanId');
 
         if (!$scanId) {
-            $scan = Plugin::getInstance()->brokenLinks->getLatestScan();
+            $scan = Plugin::getInstance()->getBrokenLinks()->getLatestScan();
 
             if (!$scan) {
                 return $this->asJson([
@@ -123,8 +137,17 @@ class BrokenLinksController extends Controller
     {
         $this->requirePostRequest();
 
+        $service = Plugin::getInstance()->getBrokenLinks();
+
+        if ($service->hasActiveScan()) {
+            return $this->asJson([
+                'success' => false,
+                'message' => 'A scan is currently in progress. Wait for it to finish before clearing data.',
+            ]);
+        }
+
         try {
-            $success = Plugin::getInstance()->brokenLinks->clearAllData();
+            $success = $service->clearAllData();
 
             return $this->asJson([
                 'success' => $success,
@@ -143,7 +166,7 @@ class BrokenLinksController extends Controller
     public function actionExport(): Response
     {
         $format = Craft::$app->request->getQueryParam('format', 'csv');
-        $brokenLinks = Plugin::getInstance()->brokenLinks->getLatestBrokenLinks(null);
+        $brokenLinks = Plugin::getInstance()->getBrokenLinks()->getLatestBrokenLinks(null);
 
         $fileName = 'broken-links-' . date('Y-m-d-His');
 
@@ -165,7 +188,12 @@ class BrokenLinksController extends Controller
                 ];
             }
 
-            $content = json_encode($data, JSON_PRETTY_PRINT);
+            // JSON_INVALID_UTF8_SUBSTITUTE keeps the export from silently
+            // failing on malformed bytes scraped from third-party pages.
+            $content = json_encode($data, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
+            if ($content === false) {
+                throw new \RuntimeException('Failed to encode broken links as JSON: ' . json_last_error_msg());
+            }
             $mimeType = 'application/json';
         } else {
             $fileName .= '.csv';

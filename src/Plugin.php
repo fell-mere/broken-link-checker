@@ -4,22 +4,34 @@ namespace craigclement\craftbrokenlinks;
 
 use Craft;
 use craft\base\Plugin as BasePlugin;
-use craft\events\RegisterUrlRulesEvent;
-use craft\web\UrlManager;
-use craft\events\RegisterCpNavItemsEvent;
-use craft\web\twig\variables\Cp;
 use craft\console\Application as ConsoleApplication;
-use craft\services\Dashboard;
 use craft\events\RegisterComponentTypesEvent;
+use craft\events\RegisterCpNavItemsEvent;
+use craft\events\RegisterUrlRulesEvent;
+use craft\events\RegisterUserPermissionsEvent;
 use craft\i18n\PhpMessageSource;
+use craft\services\Dashboard;
+use craft\services\UserPermissions;
+use craft\web\twig\variables\Cp;
+use craft\web\UrlManager;
 use craigclement\craftbrokenlinks\console\controllers\BrokenLinksController as ConsoleBrokenLinksController;
 use craigclement\craftbrokenlinks\services\BrokenLinksService;
 use craigclement\craftbrokenlinks\widgets\BrokenLinksWidget;
 use yii\base\Event;
 
+/**
+ * Broken Links plugin.
+ *
+ * @property-read BrokenLinksService $brokenLinks
+ */
 class Plugin extends BasePlugin
 {
-    public string $schemaVersion = '1.0.0';
+    /**
+     * Permission required to view and manage broken-link scans.
+     */
+    public const PERMISSION_MANAGE = 'brokenlinks:manage';
+
+    public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = false;
 
     public function init(): void
@@ -41,7 +53,7 @@ class Plugin extends BasePlugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            function(RegisterUrlRulesEvent $event) {
                 $event->rules['brokenlinks'] = 'brokenlinks/broken-links/index';
                 $event->rules['brokenlinks/start-scan'] = 'brokenlinks/broken-links/start-scan';
                 $event->rules['brokenlinks/scan-status'] = 'brokenlinks/broken-links/scan-status';
@@ -63,9 +75,28 @@ class Plugin extends BasePlugin
         }
 
         Event::on(
+            UserPermissions::class,
+            UserPermissions::EVENT_REGISTER_PERMISSIONS,
+            function(RegisterUserPermissionsEvent $event) {
+                $event->permissions[] = [
+                    'heading' => Craft::t('broken-links', 'Broken Links'),
+                    'permissions' => [
+                        self::PERMISSION_MANAGE => [
+                            'label' => Craft::t('broken-links', 'Manage broken links'),
+                        ],
+                    ],
+                ];
+            }
+        );
+
+        Event::on(
             Cp::class,
             Cp::EVENT_REGISTER_CP_NAV_ITEMS,
-            function (RegisterCpNavItemsEvent $event) {
+            function(RegisterCpNavItemsEvent $event) {
+                if (!Craft::$app->getUser()->checkPermission(self::PERMISSION_MANAGE)) {
+                    return;
+                }
+
                 $event->navItems[] = [
                     'url' => 'brokenlinks',
                     'label' => Craft::t('broken-links', 'Broken Links'),
@@ -75,6 +106,16 @@ class Plugin extends BasePlugin
         );
 
         Craft::info('Broken Links plugin loaded', __METHOD__);
+    }
+
+    /**
+     * Returns the broken links service.
+     */
+    public function getBrokenLinks(): BrokenLinksService
+    {
+        /** @var BrokenLinksService $service */
+        $service = $this->get('brokenLinks');
+        return $service;
     }
 
     private function registerConsoleCommands(): void

@@ -2,7 +2,6 @@
 
 namespace craigclement\craftbrokenlinks\migrations;
 
-use Craft;
 use craft\db\Migration;
 
 /**
@@ -38,6 +37,17 @@ class Install extends Migration
 
         $this->createIndex(null, '{{%brokenlinks_brokenlinks}}', 'entryId');
 
+        // Clear an entry's broken-link rows automatically when it is deleted.
+        $this->addForeignKey(
+            null,
+            '{{%brokenlinks_brokenlinks}}',
+            'entryId',
+            '{{%elements}}',
+            'id',
+            'SET NULL',
+            null
+        );
+
         // Create the scan history table
         $this->createTable('{{%brokenlinks_scanhistory}}', [
             'id' => $this->primaryKey(),
@@ -45,6 +55,7 @@ class Install extends Migration
             'endTime' => $this->dateTime(),
             'totalUrlsScanned' => $this->integer()->defaultValue(0),
             'totalBrokenLinks' => $this->integer()->defaultValue(0),
+            'completedBatches' => $this->integer()->notNull()->defaultValue(0),
             'status' => $this->string(255)->notNull()->defaultValue('pending'),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),

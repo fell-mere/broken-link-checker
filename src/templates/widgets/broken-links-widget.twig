@@ -133,7 +133,11 @@
                 <ul>
                     {% for link in brokenLinks %}
                         <li>
-                            <a href="{{ link.url }}" target="_blank" class="link-url" title="{{ link.url }}">{{ link.url|length > 40 ? link.url|slice(0, 40) ~ '...' : link.url }}</a>
+                            {% if link.url starts with 'http://' or link.url starts with 'https://' %}
+                                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="link-url" title="{{ link.url }}">{{ link.url|length > 40 ? link.url|slice(0, 40) ~ '...' : link.url }}</a>
+                            {% else %}
+                                <span class="link-url" title="{{ link.url }}">{{ link.url|length > 40 ? link.url|slice(0, 40) ~ '...' : link.url }}</span>
+                            {% endif %}
                             <div class="link-details">
                                 <span class="status-pill">{{ link.status }}</span>
                             </div>
