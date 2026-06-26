@@ -4,24 +4,46 @@
 {# Set the page title displayed in the browser tab and Craft control panel header #}
 {% set title = "Broken Links"|t('broken-links') %}
 
+{# Register the plugin's CP asset bundle (styles + index-page JS) #}
+{% do craft.app.view.registerAssetBundle('craigclement\\craftbrokenlinks\\web\\assets\\BrokenLinksAsset') %}
+
+{# Expose endpoints + active-scan state to the JavaScript #}
+{% do craft.app.view.registerJsVar('BrokenLinksConfig', {
+    startScanUrl: cpUrl('brokenlinks/start-scan'),
+    clearDataUrl: cpUrl('brokenlinks/clear-data'),
+    scanStatusUrl: cpUrl('brokenlinks/scan-status'),
+    activeScanId: (latestScan and latestScan.status in ['pending', 'running']) ? latestScan.id : null,
+}) %}
+
+{# Make the JS-facing strings available to Craft.t() #}
+{% do craft.app.view.registerTranslations('broken-links', [
+    'Starting scan...',
+    'Scan started successfully! The process will run in the background.',
+    'Error',
+    'Clearing data...',
+    'All data cleared successfully!',
+    'A scan is currently in progress...',
+    'Are you sure you want to clear all broken links data? This cannot be undone.',
+]) %}
+
 {% block content %}
     <div class="broken-links-container">
-        
+
         {# Display scan status and statistics if available #}
         {% if latestScan %}
             <div class="pane status-pane">
                 <div class="scan-status-strip {% if latestScan.status == 'completed' %}completed{% elseif latestScan.status == 'failed' %}failed{% else %}running{% endif %}"></div>
-                
+
                 <div class="status-header">
                     <h2>{{ "Scan Status"|t('broken-links') }}</h2>
                 </div>
-                
+
                 <div class="scan-stats-grid">
                     <div class="scan-stat-item">
                         <div class="scan-stat-label">{{ "Start Time"|t('broken-links') }}</div>
                         <div class="scan-stat-value">{{ latestScan.startTime|date('Y-m-d H:i:s') }}</div>
                     </div>
-                    
+
                     <div class="scan-stat-item">
                         <div class="scan-stat-label">{{ "End Time"|t('broken-links') }}</div>
                         <div class="scan-stat-value">
@@ -32,12 +54,12 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="scan-stat-item">
                         <div class="scan-stat-label">{{ "URLs Scanned"|t('broken-links') }}</div>
                         <div class="scan-stat-value">{{ latestScan.totalUrlsScanned }}</div>
                     </div>
-                    
+
                     <div class="scan-stat-item">
                         <div class="scan-stat-label">{{ "Broken Links Found"|t('broken-links') }}</div>
                         <div class="scan-stat-value">{{ latestScan.totalBrokenLinks }}</div>
@@ -80,10 +102,10 @@
         {# Section for displaying broken links #}
         <div id="results">
             {% if brokenLinks|length > 0 %}
-                <h2>{{ "Broken Links"|t('broken-links') }} 
+                <h2>{{ "Broken Links"|t('broken-links') }}
                     <span class="count-badge">{{ totalBrokenLinks }}</span>
                 </h2>
-                
+
                 <div class="export-buttons">
                     <a href="{{ cpUrl('brokenlinks/export', {'format': 'csv'}) }}" class="btn secondary" download>
                         <span data-icon="download"></span> {{ "Export CSV"|t('broken-links') }}
@@ -92,7 +114,7 @@
                         <span data-icon="download"></span> {{ "Export JSON"|t('broken-links') }}
                     </a>
                 </div>
-                
+
                 <div class="tableview">
                     <table class="data fullwidth">
                         <thead>
@@ -100,7 +122,6 @@
                                 <th>{{ "Broken Link"|t('broken-links') }}</th>
                                 <th>{{ "Status"|t('broken-links') }}</th>
                                 <th>{{ "Link Text"|t('broken-links') }}</th>
-                                <th>{{ "Field"|t('broken-links') }}</th>
                                 <th>{{ "Page URL"|t('broken-links') }}</th>
                                 <th>{{ "Entry"|t('broken-links') }}</th>
                             </tr>
@@ -121,7 +142,6 @@
                                     <td>
                                         {{ link.linkText ?: 'N/A' }}
                                     </td>
-                                    <td>{{ link.field ?: '–' }}</td>
                                     <td>
                                         {% if link.pageUrl starts with 'http://' or link.pageUrl starts with 'https://' %}
                                             <a href="{{ link.pageUrl }}" target="_blank" rel="noopener noreferrer" title="{{ link.pageUrl }}">
@@ -154,342 +174,4 @@
             {% endif %}
         </div>
     </div>
-
-{# Inline CSS styles for the control panel interface #}
-<style>
-    .broken-links-container {
-        margin-top: 20px;
-    }
-    
-    .status-pane {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .scan-status-strip {
-        width: 5px;
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        z-index: 1;
-    }
-    
-    .scan-status-strip.running {
-        background-color: #3d7afc;
-    }
-    
-    .scan-status-strip.completed {
-        background-color: #27AB83;
-    }
-    
-    .scan-status-strip.failed {
-        background-color: #e25c5c;
-    }
-    
-    .status-header {
-        padding: 14px 24px;
-        border-bottom: 1px solid rgba(51, 64, 77, 0.1);
-    }
-    
-    .status-header h2 {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 600;
-    }
-    
-    .scan-stats-grid {
-        padding: 14px 24px;
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
-    }
-    
-    .scan-stat-label {
-        color: #8f98a3;
-        margin-bottom: 4px;
-        font-size: 12px;
-    }
-    
-    .scan-stat-value {
-        font-size: 14px;
-        font-weight: 500;
-    }
-    
-    .buttons {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 24px 0;
-    }
-    
-    .hidden {
-        display: none !important;
-    }
-    
-    .flex-spacer {
-        flex-grow: 1;
-    }
-    
-    .count-badge {
-        background-color: #e5e7eb;
-        color: #4b5563;
-        border-radius: 9999px;
-        padding: 2px 8px;
-        font-size: 12px;
-        margin-left: 5px;
-    }
-    
-    .loading-text {
-        margin-left: 10px;
-    }
-    
-    .status-pill {
-        display: inline-block;
-        padding: 3px 8px;
-        border-radius: 3px;
-        font-size: 12px;
-        line-height: 1.5;
-    }
-    
-    .status-pill.unreachable,
-    .status-pill.broken {
-        background-color: #FEECDC;
-        color: #C05621;
-    }
-    
-    .pane {
-        position: relative;
-        margin-bottom: 24px;
-        background-color: #fff;
-        border-radius: 5px;
-        box-shadow: 0 0 0 1px rgba(31, 41, 51, 0.1);
-    }
-    
-    .advanced-options {
-        margin-top: 20px;
-    }
-    
-    .pane-header {
-        padding: 14px 24px;
-        border-bottom: 1px solid rgba(51, 64, 77, 0.1);
-    }
-    
-    .pane-header h2 {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 600;
-    }
-    
-    .pane-body {
-        padding: 24px;
-    }
-    
-    .no-results {
-        padding: 48px 0;
-        text-align: center;
-        color: #8f98a3;
-    }
-    
-    .export-buttons {
-        margin: 12px 0 16px;
-        display: flex;
-        gap: 8px;
-    }
-    
-    table.data {
-        margin-top: 12px;
-    }
-    
-    table.data thead th {
-        font-size: 12px;
-        color: #8f98a3;
-        font-weight: normal;
-        white-space: nowrap;
-    }
-    
-    table.data tbody td {
-        padding: 11px 10px;
-        word-break: break-all;
-    }
-    
-    @media (max-width: 768px) {
-        .scan-stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .buttons {
-            flex-wrap: wrap;
-        }
-    }
-</style>
-
-{# JavaScript logic to handle the scan requests and display results #}
-<script type="text/javascript">
-    // Show/hide advanced options
-    document.getElementById('show-advanced').addEventListener('click', function() {
-        document.getElementById('advanced-options').classList.remove('hidden');
-        this.classList.add('hidden');
-    });
-    
-    document.getElementById('toggle-advanced').addEventListener('click', function() {
-        document.getElementById('advanced-options').classList.add('hidden');
-        document.getElementById('show-advanced').classList.remove('hidden');
-    });
-    
-    // Start a regular scan
-    document.getElementById('start-scan').addEventListener('click', function() {
-        startScan(false);
-    });
-    
-    // Start a forced full scan
-    document.getElementById('force-scan').addEventListener('click', function() {
-        startScan(true);
-    });
-    
-    // Clear all data
-    document.getElementById('clear-data').addEventListener('click', function() {
-        if (confirm('{{ "Are you sure you want to clear all broken links data? This cannot be undone."|t('broken-links') }}')) {
-            clearData();
-        }
-    });
-    
-    // Function to start a scan
-    function startScan(forceFullScan) {
-        const loading = document.getElementById('loading');
-        const spinner = document.getElementById('loading-spinner');
-        loading.textContent = '{{ "Starting scan..."|t('broken-links') }}';
-        spinner.classList.remove('hidden');
-        
-        // Get batch size if advanced options are shown
-        let batchSize = 100;
-        if (!document.getElementById('advanced-options').classList.contains('hidden')) {
-            batchSize = parseInt(document.getElementById('batch-size').value) || 100;
-        }
-        
-        // Disable buttons during scan
-        document.querySelectorAll('.buttons button').forEach(btn => {
-            btn.disabled = true;
-        });
-        
-        // Make the request to start the scan
-        fetch('{{ cpUrl('brokenlinks/start-scan') }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': Craft.csrfTokenValue
-            },
-            body: JSON.stringify({
-                forceFullScan: forceFullScan,
-                batchSize: batchSize
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                loading.textContent = '{{ "Scan started successfully! The process will run in the background."|t('broken-links') }}';
-                
-                // Set a timer to reload the page in 3 seconds
-                setTimeout(function() {
-                    window.location.reload();
-                }, 3000);
-            } else {
-                loading.textContent = `{{ "Error"|t('broken-links') }}: ${data.message}`;
-                spinner.classList.add('hidden');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            loading.textContent = `{{ "Error"|t('broken-links') }}: ${error.message}`;
-            spinner.classList.add('hidden');
-            
-            // Re-enable buttons on error
-            document.querySelectorAll('.buttons button').forEach(btn => {
-                btn.disabled = false;
-            });
-        });
-    }
-    
-    // Function to clear all data
-    function clearData() {
-        const loading = document.getElementById('loading');
-        const spinner = document.getElementById('loading-spinner');
-        loading.textContent = '{{ "Clearing data..."|t('broken-links') }}';
-        spinner.classList.remove('hidden');
-        
-        // Disable buttons during operation
-        document.querySelectorAll('.buttons button').forEach(btn => {
-            btn.disabled = true;
-        });
-        
-        // Make the request to clear data
-        fetch('{{ cpUrl('brokenlinks/clear-data') }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': Craft.csrfTokenValue
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                loading.textContent = '{{ "All data cleared successfully!"|t('broken-links') }}';
-                
-                // Reload the page after a short delay
-                setTimeout(function() {
-                    window.location.reload();
-                }, 2000);
-            } else {
-                loading.textContent = `{{ "Error"|t('broken-links') }}: ${data.message}`;
-                spinner.classList.add('hidden');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            loading.textContent = `{{ "Error"|t('broken-links') }}: ${error.message}`;
-            spinner.classList.add('hidden');
-            
-            // Re-enable buttons on error
-            document.querySelectorAll('.buttons button').forEach(btn => {
-                btn.disabled = false;
-            });
-        });
-    }
-    
-    // Check for ongoing scans
-    {% if latestScan and (latestScan.status == 'pending' or latestScan.status == 'running') %}
-        const loading = document.getElementById('loading');
-        const spinner = document.getElementById('loading-spinner');
-        loading.textContent = '{{ "A scan is currently in progress..."|t('broken-links') }}';
-        spinner.classList.remove('hidden');
-        
-        // Poll for scan status every 5 seconds
-        const statusInterval = setInterval(function() {
-            fetch('{{ cpUrl('brokenlinks/scan-status') }}?scanId={{ latestScan.id }}')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.isComplete || data.isFailed) {
-                            clearInterval(statusInterval);
-                            window.location.reload();
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking scan status:', error);
-                });
-        }, 5000);
-    {% endif %}
-</script>
-
 {% endblock %}

@@ -5,7 +5,11 @@ namespace craigclement\craftbrokenlinks\widgets;
 use Craft;
 use craft\base\Widget;
 use craigclement\craftbrokenlinks\Plugin;
+use craigclement\craftbrokenlinks\web\assets\BrokenLinksAsset;
 
+/**
+ * Dashboard widget showing a summary of the most recent broken-link scan.
+ */
 class BrokenLinksWidget extends Widget
 {
     public int $limit = 5;
@@ -40,12 +44,15 @@ class BrokenLinksWidget extends Widget
 
     public function getBodyHtml(): ?string
     {
+        $view = Craft::$app->getView();
+        $view->registerAssetBundle(BrokenLinksAsset::class);
+
         $service = Plugin::getInstance()->getBrokenLinks();
         $latestScan = $service->getLatestScan();
         $brokenLinks = $service->getLatestBrokenLinks($this->limit);
         $totalBrokenLinks = $this->getCachedTotal();
 
-        return Craft::$app->getView()->renderTemplate(
+        return $view->renderTemplate(
             'brokenlinks/widgets/broken-links-widget',
             [
                 'widget' => $this,

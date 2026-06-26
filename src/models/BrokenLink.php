@@ -4,6 +4,9 @@ namespace craigclement\craftbrokenlinks\models;
 
 use craft\base\Model;
 
+/**
+ * Represents a single broken link found during a scan.
+ */
 class BrokenLink extends Model
 {
     public ?int $id = null;

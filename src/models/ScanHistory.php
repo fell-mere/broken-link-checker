@@ -5,6 +5,9 @@ namespace craigclement\craftbrokenlinks\models;
 use craft\base\Model;
 use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 
+/**
+ * Represents the history and summary of a single broken-link scan run.
+ */
 class ScanHistory extends Model
 {
     public ?int $id = null;

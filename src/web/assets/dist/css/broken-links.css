@@ -1,0 +1,283 @@
+/* ==========================================================================
+   Broken Links — control panel page
+   ========================================================================== */
+
+.broken-links-container {
+    margin-top: 20px;
+}
+
+.status-pane {
+    position: relative;
+    overflow: hidden;
+}
+
+.scan-status-strip {
+    width: 5px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+.scan-status-strip.running {
+    background-color: var(--blue-500, #3d7afc);
+}
+
+.scan-status-strip.completed {
+    background-color: var(--green-500, #27ab83);
+}
+
+.scan-status-strip.failed {
+    background-color: var(--red-500, #e25c5c);
+}
+
+.status-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.status-header h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.scan-stats-grid {
+    padding: 14px 24px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.scan-stat-label {
+    color: var(--medium-text-color, #8f98a3);
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.scan-stat-value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 24px 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.flex-spacer {
+    flex-grow: 1;
+}
+
+.count-badge {
+    background-color: var(--gray-200, #e5e7eb);
+    color: var(--text-color, #4b5563);
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.loading-text {
+    margin-left: 10px;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.status-pill.unreachable,
+.status-pill.broken {
+    background-color: #feecdc;
+    color: #c05621;
+}
+
+.advanced-options {
+    margin-top: 20px;
+}
+
+.pane-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.pane-header h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.pane-body {
+    padding: 24px;
+}
+
+.no-results {
+    padding: 48px 0;
+    text-align: center;
+    color: var(--medium-text-color, #8f98a3);
+}
+
+.export-buttons {
+    margin: 12px 0 16px;
+    display: flex;
+    gap: 8px;
+}
+
+table.data {
+    margin-top: 12px;
+}
+
+table.data thead th {
+    font-size: 12px;
+    color: var(--medium-text-color, #8f98a3);
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+table.data tbody td {
+    padding: 11px 10px;
+    word-break: break-all;
+}
+
+@media (max-width: 768px) {
+    .scan-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .buttons {
+        flex-wrap: wrap;
+    }
+}
+
+/* ==========================================================================
+   Broken Links — dashboard widget
+   ========================================================================== */
+
+.broken-links-widget .widget-status {
+    margin-bottom: 16px;
+}
+
+.broken-links-widget .widget-status .status {
+    margin-bottom: 4px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.broken-links-widget .widget-status .status.running {
+    color: var(--blue-500, #3d7afc);
+}
+
+.broken-links-widget .widget-status .status.warning {
+    color: var(--red-500, #e27730);
+    width: 100%;
+    display: inline-block;
+}
+
+.broken-links-widget .widget-status .status.good {
+    color: var(--green-500, #27ab83);
+}
+
+.broken-links-widget .widget-status .status.neutral {
+    color: var(--medium-text-color, #8f98a3);
+}
+
+.broken-links-widget .widget-status .details {
+    color: var(--medium-text-color, #8f98a3);
+    font-size: 13px;
+}
+
+.broken-links-widget .widget-links h3 {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--medium-text-color, #576e7a);
+    margin: 8px 0;
+    padding: 0;
+}
+
+.broken-links-widget .widget-links ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--hairline-color, #e3e5e8);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.broken-links-widget .widget-links li {
+    border-top: 1px solid var(--hairline-color, #f3f4f6);
+    padding: 10px 12px;
+}
+
+.broken-links-widget .widget-links li:first-child {
+    border-top: none;
+}
+
+.broken-links-widget .link-url {
+    display: block;
+    color: var(--link-color, #3d7afc);
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 6px;
+    word-break: break-all;
+    font-weight: 500;
+}
+
+.broken-links-widget .link-url:hover {
+    text-decoration: underline;
+}
+
+.broken-links-widget .link-details {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+}
+
+.broken-links-widget .status-pill {
+    background-color: #feecdc;
+    color: #c05621;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.broken-links-widget .view-all {
+    display: block;
+    margin-top: 12px;
+    text-align: center;
+    color: var(--link-color, #3d7afc);
+    font-size: 14px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.broken-links-widget .view-all:hover {
+    text-decoration: underline;
+}
+
+.broken-links-widget .scan-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    width: 100%;
+    height: 36px;
+    font-weight: 500;
+}
+
+.broken-links-widget--centered {
+    text-align: center;
+}

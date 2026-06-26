@@ -8,6 +8,10 @@ use craigclement\craftbrokenlinks\Plugin;
 use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 use yii\web\Response;
 
+/**
+ * Control-panel controller for starting scans, reporting status, clearing
+ * stored data, and exporting broken-link results.
+ */
 class BrokenLinksController extends Controller
 {
     protected array|int|bool $allowAnonymous = [];
@@ -26,7 +30,7 @@ class BrokenLinksController extends Controller
         return true;
     }
 
-    public function actionIndex(): string
+    public function actionIndex(): Response
     {
         $service = Plugin::getInstance()->getBrokenLinks();
 
@@ -180,7 +184,6 @@ class BrokenLinksController extends Controller
                     'status' => $link->status,
                     'statusCode' => $link->statusCode,
                     'linkText' => $link->linkText,
-                    'field' => $link->field,
                     'pageUrl' => $link->pageUrl,
                     'entryId' => $link->entryId,
                     'entryTitle' => $link->entryTitle,
@@ -199,14 +202,13 @@ class BrokenLinksController extends Controller
             $fileName .= '.csv';
 
             $fh = fopen('php://temp', 'r+');
-            fputcsv($fh, ['URL', 'Status', 'Status Code', 'Link Text', 'Field', 'Page URL', 'Entry ID', 'Entry Title', 'Last Scanned']);
+            fputcsv($fh, ['URL', 'Status', 'Status Code', 'Link Text', 'Page URL', 'Entry ID', 'Entry Title', 'Last Scanned']);
             foreach ($brokenLinks as $link) {
                 fputcsv($fh, [
                     $link->url,
                     $link->status,
                     $link->statusCode,
                     $link->linkText,
-                    $link->field,
                     $link->pageUrl,
                     $link->entryId,
                     $link->entryTitle,

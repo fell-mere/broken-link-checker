@@ -28,16 +28,16 @@ return [
     'Broken Link' => 'Broken Link',
     'Status' => 'Status',
     'Link Text' => 'Link Text',
-    'Field' => 'Field',
     'Page URL' => 'Page URL',
     'Entry' => 'Entry',
-    
+
     // Widget
     'Recent Broken Links' => 'Recent Broken Links',
     'Scan In Progress' => 'Scan In Progress',
     'No Broken Links' => 'No Broken Links',
     'Last scan:' => 'Last scan:',
     'In progress' => 'In progress',
+    '{count} broken' => '{count} broken',
     'View all {count} broken links' => 'View all {count} broken links',
     'Start First Scan' => 'Start First Scan',
     'No scans have been run yet' => 'No scans have been run yet',
