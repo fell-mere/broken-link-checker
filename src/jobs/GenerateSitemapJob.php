@@ -33,11 +33,6 @@ class GenerateSitemapJob extends BaseJob
      */
     public bool $forceFullScan = false;
 
-    /**
-     * @var string The base URL of the website being scanned.
-     */
-    public string $baseUrl = '';
-
     // Public Methods
     // =========================================================================
 
@@ -61,10 +56,6 @@ class GenerateSitemapJob extends BaseJob
         $scanRecord->save();
 
         try {
-            if (!$this->baseUrl) {
-                $this->baseUrl = Craft::$app->getSites()->getPrimarySite()->getBaseUrl();
-            }
-
             $entryQuery = Entry::find();
 
             if (!$this->forceFullScan) {
@@ -97,7 +88,6 @@ class GenerateSitemapJob extends BaseJob
                         'description' => 'Checking links in batch ' . ($batchIndex + 1) . ' of ' . $totalBatches,
                         'scanId' => $this->scanId,
                         'entryIds' => $idBatch,
-                        'baseUrl' => $this->baseUrl,
                         'totalBatches' => $totalBatches,
                         'batchIndex' => $batchIndex,
                         'forceFullScan' => $this->forceFullScan,
