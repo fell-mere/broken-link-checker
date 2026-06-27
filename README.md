@@ -32,7 +32,7 @@ composer require fell-mere/craft-brokenlinks
 
 ### Control Panel
 
-Navigate to **Broken Links** in the CP sidebar.
+Navigate to **Broken Links** in the CP sidebar. Access requires the **Manage broken links** permission, which can be granted per user group under **Settings → Users → Permissions** (admins have it automatically).
 
 | Button | Description |
 |--------|-------------|
@@ -56,9 +56,6 @@ Results can be exported as **CSV** or **JSON** from the results table.
 # Set a custom batch size
 ./craft broken-links/scan --batch-size=50
 
-# Scan a specific URL
-./craft broken-links/scan --base-url=https://example.com
-
 # Wait for the scan to complete before exiting (useful in CI)
 ./craft broken-links/scan --wait
 
@@ -72,6 +69,19 @@ Results can be exported as **CSV** or **JSON** from the results table.
 ./craft broken-links/clear-data
 ```
 
+### Scheduling (cron)
+
+`broken-links/scan` only *queues* the work — a queue runner must process it. Either run a persistent worker (`./craft queue/listen`) or pair the scan with `./craft queue/run`:
+
+```cron
+# Nightly incremental scan
+0 2 * * *   cd /path/to/project && ./craft broken-links/scan
+# Process the queue (omit if you run a persistent worker)
+*/5 * * * * cd /path/to/project && ./craft queue/run
+```
+
+> `--wait` polls the scan's status but does **not** run the queue, so it's only useful when a worker is already running.
+
 ### Dashboard Widget
 
 Add the **Broken Links** widget to your Craft dashboard. It shows the count of broken links found in the last scan and links directly to the full results. Configure the number of links shown via the widget settings.
@@ -84,10 +94,11 @@ Add the **Broken Links** widget to your Craft dashboard. It shows the count of b
    - Extracts all `<a href>` links
    - Sends a HEAD request to each link
    - Saves any link returning HTTP 400+ or that is unreachable
-3. Results accumulate in the database across batches; the scan is marked complete when the last batch finishes.
+3. Results accumulate in the database across batches; the scan is marked complete once **every** batch has finished. Completion is tracked with an atomic per-scan counter, so it stays correct even with multiple concurrent queue workers.
 
 ## Notes
 
+- Scans cover enabled entries on the **primary site**.
 - Only `http://` and `https://` links are checked; `mailto:`, `tel:`, anchor, and relative links are skipped.
 - Each HTTP request has a 5-second timeout. Unreachable hosts (connection refused, DNS failure, etc.) are recorded separately from HTTP error responses.
-- The field column in results is not yet populated — it will show which CMS field contains the broken link in a future release.
+- **SSRF protection:** links that resolve to private, loopback, or otherwise reserved IP addresses are skipped, *except* links pointing at your own site's hostname — so internal links are still checked while requests to internal infrastructure are blocked.

@@ -27,13 +27,12 @@ class BrokenLinksService extends Component
     /**
      * Start a new scan for broken links using queue jobs.
      *
-     * @param string|null $baseUrl The base URL of the website.
      * @param bool $forceFullScan Whether to force a full scan of all entries.
      * @param int $batchSize Maximum number of entries to process in a batch.
      * @return int The ID of the newly created scan.
      * @throws \RuntimeException if the scan history record cannot be saved.
      */
-    public function startScan(?string $baseUrl = null, bool $forceFullScan = false, int $batchSize = 100): int
+    public function startScan(bool $forceFullScan = false, int $batchSize = 100): int
     {
         // Create a new scan history record
         $scanRecord = new ScanHistoryRecord();
@@ -44,19 +43,13 @@ class BrokenLinksService extends Component
             throw new \RuntimeException('Failed to create scan record: ' . implode(', ', $scanRecord->getFirstErrors()));
         }
 
-        // Get the base URL if not provided
-        if (!$baseUrl) {
-            $baseUrl = Craft::$app->getSites()->getPrimarySite()->getBaseUrl();
-        }
-        
         // Push the sitemap generation job to the queue
         Craft::$app->queue->push(new GenerateSitemapJob([
             'scanId' => $scanRecord->id,
-            'baseUrl' => $baseUrl,
             'forceFullScan' => $forceFullScan,
             'batchSize' => $batchSize,
         ]));
-        
+
         // Return the scan ID
         return $scanRecord->id;
     }

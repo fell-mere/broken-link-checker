@@ -2,7 +2,6 @@
 
 namespace craigclement\craftbrokenlinks\console\controllers;
 
-use Craft;
 use craigclement\craftbrokenlinks\Plugin;
 use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 use yii\console\Controller;
@@ -32,11 +31,6 @@ class BrokenLinksController extends Controller
     public int $batchSize = 100;
 
     /**
-     * @var string The base URL of the website to scan.
-     */
-    public string $baseUrl = '';
-
-    /**
      * @var bool Whether to wait for the scan to complete before returning.
      */
     public bool $wait = false;
@@ -57,7 +51,6 @@ class BrokenLinksController extends Controller
         return array_merge(parent::options($actionID), [
             'forceFullScan',
             'batchSize',
-            'baseUrl',
             'wait',
             'timeout',
         ]);
@@ -70,15 +63,10 @@ class BrokenLinksController extends Controller
      */
     public function actionScan(): int
     {
-        if (!$this->baseUrl) {
-            $this->baseUrl = Craft::$app->getSites()->getPrimarySite()->getBaseUrl();
-        }
-
-        $this->stdout("Starting broken link scan with base URL: {$this->baseUrl}\n");
         $this->stdout('Force full scan: ' . ($this->forceFullScan ? 'Yes' : 'No (only scanning updated entries)') . "\n");
         $this->stdout("Batch size: {$this->batchSize}\n");
 
-        $scanId = Plugin::getInstance()->getBrokenLinks()->startScan($this->baseUrl, $this->forceFullScan, $this->batchSize);
+        $scanId = Plugin::getInstance()->getBrokenLinks()->startScan($this->forceFullScan, $this->batchSize);
 
         $this->stdout("Scan started with ID: {$scanId}\n");
         $this->stdout("Added to queue for processing.\n");

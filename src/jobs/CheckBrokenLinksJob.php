@@ -35,11 +35,6 @@ class CheckBrokenLinksJob extends BaseJob
     public array $entryIds = [];
 
     /**
-     * @var string The base URL of the website being scanned.
-     */
-    public string $baseUrl = '';
-
-    /**
      * @var int The total number of batches in the scan.
      */
     public int $totalBatches = 1;

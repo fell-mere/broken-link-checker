@@ -70,7 +70,6 @@ class BrokenLinksController extends Controller
     {
         $this->requirePostRequest();
 
-        $baseUrl = Craft::$app->request->getBodyParam('url');
         $forceFullScan = (bool)Craft::$app->request->getBodyParam('forceFullScan', false);
         $batchSize = (int)Craft::$app->request->getBodyParam('batchSize', 100);
 
@@ -78,19 +77,8 @@ class BrokenLinksController extends Controller
             $batchSize = 100;
         }
 
-        if (!$baseUrl) {
-            $baseUrl = Craft::$app->getSites()->getPrimarySite()->getBaseUrl();
-        }
-
-        if (!filter_var($baseUrl, FILTER_VALIDATE_URL)) {
-            return $this->asJson([
-                'success' => false,
-                'message' => 'Invalid URL provided.',
-            ]);
-        }
-
         try {
-            $scanId = Plugin::getInstance()->getBrokenLinks()->startScan($baseUrl, $forceFullScan, $batchSize);
+            $scanId = Plugin::getInstance()->getBrokenLinks()->startScan($forceFullScan, $batchSize);
 
             return $this->asJson([
                 'success' => true,
