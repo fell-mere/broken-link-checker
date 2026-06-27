@@ -15,15 +15,47 @@ use GuzzleHttp\Psr7\UriResolver;
 
 /**
  * CheckBrokenLinksJob fetches each entry page and HEAD-checks every link found on it.
+ *
+ * @author Fell Mere
+ * @since 1.0.0
  */
 class CheckBrokenLinksJob extends BaseJob
 {
+    // Public Properties
+    // =========================================================================
+
+    /**
+     * @var int The ID of the scan this batch belongs to.
+     */
     public int $scanId;
+
+    /**
+     * @var int[] The entry IDs to check in this batch.
+     */
     public array $entryIds = [];
+
+    /**
+     * @var string The base URL of the website being scanned.
+     */
     public string $baseUrl = '';
+
+    /**
+     * @var int The total number of batches in the scan.
+     */
     public int $totalBatches = 1;
+
+    /**
+     * @var int The zero-based index of this batch within the scan.
+     */
     public int $batchIndex = 0;
+
+    /**
+     * @var bool Whether this scan was started as a full scan.
+     */
     public bool $forceFullScan = false;
+
+    // Private Properties
+    // =========================================================================
 
     /**
      * Hosts that are always allowed to be requested (the site's own hosts).
@@ -32,6 +64,9 @@ class CheckBrokenLinksJob extends BaseJob
      * @var string[]
      */
     private array $allowedHosts = [];
+
+    // Public Methods
+    // =========================================================================
 
     /**
      * @inheritdoc
@@ -44,6 +79,7 @@ class CheckBrokenLinksJob extends BaseJob
 
     /**
      * @inheritdoc
+     * @throws \Throwable if the scan record is missing or link checking fails.
      */
     public function execute($queue): void
     {
@@ -102,6 +138,9 @@ class CheckBrokenLinksJob extends BaseJob
         }
     }
 
+    // Private Methods
+    // =========================================================================
+
     /**
      * Atomically record this batch's results and mark the scan complete once
      * every batch has finished — regardless of the order they finish in.
@@ -135,6 +174,12 @@ class CheckBrokenLinksJob extends BaseJob
         }
     }
 
+    /**
+     * Fetches a page and HEAD-checks every link on it, recording any that are
+     * broken or unreachable.
+     *
+     * @return array<int, array<string, mixed>> The saved broken-link attribute sets.
+     */
     private function checkPageLinks(Client $client, string $url, Entry $entry): array
     {
         $brokenLinks = [];
@@ -236,6 +281,9 @@ class CheckBrokenLinksJob extends BaseJob
         return $links;
     }
 
+    /**
+     * Resolves a (possibly relative) link against the page's base URL.
+     */
     private function resolveUrl(string $baseUrl, string $relativeUrl): string
     {
         return (string) UriResolver::resolve(
@@ -244,6 +292,13 @@ class CheckBrokenLinksJob extends BaseJob
         );
     }
 
+    /**
+     * Creates or updates a broken-link record for the given data.
+     *
+     * @param array<string, mixed> $data The broken-link attributes to persist.
+     * @return array<string, mixed> The saved record's attributes, or the input
+     *                              data if saving failed.
+     */
     private function saveBrokenLink(array $data): array
     {
         try {
@@ -282,6 +337,12 @@ class CheckBrokenLinksJob extends BaseJob
         }
     }
 
+    // Protected Methods
+    // =========================================================================
+
+    /**
+     * @inheritdoc
+     */
     protected function defaultDescription(): string
     {
         return 'Checking for broken links';

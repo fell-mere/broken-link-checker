@@ -11,13 +11,26 @@ use yii\web\Response;
 /**
  * Control-panel controller for starting scans, reporting status, clearing
  * stored data, and exporting broken-link results.
+ *
+ * @author Fell Mere
+ * @since 1.0.0
  */
 class BrokenLinksController extends Controller
 {
+    // Protected Properties
+    // =========================================================================
+
+    /**
+     * @var array|int|bool The action(s) accessible anonymously; none here.
+     */
     protected array|int|bool $allowAnonymous = [];
+
+    // Public Methods
+    // =========================================================================
 
     /**
      * @inheritdoc
+     * @throws \yii\web\ForbiddenHttpException if the user lacks the manage permission.
      */
     public function beforeAction($action): bool
     {
@@ -30,6 +43,9 @@ class BrokenLinksController extends Controller
         return true;
     }
 
+    /**
+     * Renders the broken-links index page with the latest scan and results.
+     */
     public function actionIndex(): Response
     {
         $service = Plugin::getInstance()->getBrokenLinks();
@@ -45,6 +61,11 @@ class BrokenLinksController extends Controller
         ]);
     }
 
+    /**
+     * Starts a new broken-link scan and returns the result as JSON.
+     *
+     * @throws \yii\web\BadRequestHttpException if the request is not a POST request.
+     */
     public function actionStartScan(): Response
     {
         $this->requirePostRequest();
@@ -86,6 +107,9 @@ class BrokenLinksController extends Controller
         }
     }
 
+    /**
+     * Returns the status of a scan (by `scanId`, or the latest) as JSON.
+     */
     public function actionScanStatus(): Response
     {
         $scanId = Craft::$app->request->getQueryParam('scanId');
@@ -137,6 +161,11 @@ class BrokenLinksController extends Controller
         }
     }
 
+    /**
+     * Clears all stored broken-link data and returns the result as JSON.
+     *
+     * @throws \yii\web\BadRequestHttpException if the request is not a POST request.
+     */
     public function actionClearData(): Response
     {
         $this->requirePostRequest();
@@ -167,6 +196,11 @@ class BrokenLinksController extends Controller
         }
     }
 
+    /**
+     * Exports the broken-link results as a downloadable CSV or JSON file.
+     *
+     * @throws \RuntimeException if the results cannot be encoded as JSON.
+     */
     public function actionExport(): Response
     {
         $format = Craft::$app->request->getQueryParam('format', 'csv');

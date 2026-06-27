@@ -12,9 +12,18 @@ use yii\base\Component;
 
 /**
  * Service to check for broken links in Craft CMS entries.
+ *
+ * An instance of the service is available via
+ * `Plugin::getInstance()->getBrokenLinks()`.
+ *
+ * @author Fell Mere
+ * @since 1.0.0
  */
 class BrokenLinksService extends Component
 {
+    // Public Methods
+    // =========================================================================
+
     /**
      * Start a new scan for broken links using queue jobs.
      *
@@ -22,6 +31,7 @@ class BrokenLinksService extends Component
      * @param bool $forceFullScan Whether to force a full scan of all entries.
      * @param int $batchSize Maximum number of entries to process in a batch.
      * @return int The ID of the newly created scan.
+     * @throws \RuntimeException if the scan history record cannot be saved.
      */
     public function startScan(?string $baseUrl = null, bool $forceFullScan = false, int $batchSize = 100): int
     {

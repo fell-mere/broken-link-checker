@@ -10,9 +10,15 @@ namespace craigclement\craftbrokenlinks\helpers;
  * hosts — so internal link checking still works on local/staging
  * environments while requests to cloud metadata endpoints, internal
  * services, etc. are blocked.
+ *
+ * @author Fell Mere
+ * @since 1.0.0
  */
 class UrlSafety
 {
+    // Public Methods
+    // =========================================================================
+
     /**
      * Whether a URL is safe to request.
      *
@@ -56,6 +62,9 @@ class UrlSafety
 
         return true;
     }
+
+    // Private Methods
+    // =========================================================================
 
     /**
      * Collect every IP a host resolves to (or the host itself if it is an IP).

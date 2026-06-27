@@ -9,16 +9,49 @@ use yii\console\Controller;
 use yii\console\ExitCode;
 
 /**
- * Command-line controller for Broken Link Checker plugin
+ * Command-line controller for Broken Link Checker plugin.
+ *
+ * Provides commands to start scans, report scan status, and clear stored data.
+ *
+ * @author Fell Mere
+ * @since 1.0.0
  */
 class BrokenLinksController extends Controller
 {
+    // Public Properties
+    // =========================================================================
+
+    /**
+     * @var bool Whether to force a full scan of all entries.
+     */
     public bool $forceFullScan = false;
+
+    /**
+     * @var int Maximum number of entries to process in a batch.
+     */
     public int $batchSize = 100;
+
+    /**
+     * @var string The base URL of the website to scan.
+     */
     public string $baseUrl = '';
+
+    /**
+     * @var bool Whether to wait for the scan to complete before returning.
+     */
     public bool $wait = false;
+
+    /**
+     * @var int Maximum number of seconds to wait for the scan to complete.
+     */
     public int $timeout = 3600;
 
+    // Public Methods
+    // =========================================================================
+
+    /**
+     * @inheritdoc
+     */
     public function options($actionID): array
     {
         return array_merge(parent::options($actionID), [
@@ -30,6 +63,11 @@ class BrokenLinksController extends Controller
         ]);
     }
 
+    /**
+     * Starts a broken-link scan, optionally waiting for it to finish.
+     *
+     * @throws \RuntimeException if the scan history record cannot be saved.
+     */
     public function actionScan(): int
     {
         if (!$this->baseUrl) {
@@ -90,6 +128,9 @@ class BrokenLinksController extends Controller
         return ExitCode::OK;
     }
 
+    /**
+     * Prints the status and summary of a scan (by ID, or the latest).
+     */
     public function actionStatus(?int $scanId = null): int
     {
         if ($scanId === null) {
@@ -127,6 +168,9 @@ class BrokenLinksController extends Controller
         return ExitCode::OK;
     }
 
+    /**
+     * Clears all stored broken-link data, unless a scan is in progress.
+     */
     public function actionClearData(): int
     {
         $this->stdout("Clearing all broken links data...\n");

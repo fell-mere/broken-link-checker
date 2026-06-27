@@ -22,18 +22,44 @@ use yii\base\Event;
 /**
  * Broken Links plugin.
  *
+ * Registers the broken-links service, control-panel routes, dashboard widget,
+ * user permissions, CP navigation, and console commands.
+ *
  * @property-read BrokenLinksService $brokenLinks
+ *
+ * @author Fell Mere
+ * @since 1.0.0
  */
 class Plugin extends BasePlugin
 {
+    // Constants
+    // =========================================================================
+
     /**
      * Permission required to view and manage broken-link scans.
      */
     public const PERMISSION_MANAGE = 'brokenlinks:manage';
 
+    // Public Properties
+    // =========================================================================
+
+    /**
+     * @var string The plugin's schema version, used to track migration state.
+     */
     public string $schemaVersion = '1.1.0';
+
+    /**
+     * @var bool Whether the plugin has control-panel settings.
+     */
     public bool $hasCpSettings = false;
 
+    // Public Methods
+    // =========================================================================
+
+    /**
+     * Initializes the plugin, wiring up components, translations, routes,
+     * the dashboard widget, console commands, permissions, and CP nav.
+     */
     public function init(): void
     {
         parent::init();
@@ -118,6 +144,13 @@ class Plugin extends BasePlugin
         return $service;
     }
 
+    // Private Methods
+    // =========================================================================
+
+    /**
+     * Maps the plugin's console controller so its commands are available
+     * to the CLI.
+     */
     private function registerConsoleCommands(): void
     {
         Craft::$app->controllerMap['broken-links'] = ConsoleBrokenLinksController::class;
