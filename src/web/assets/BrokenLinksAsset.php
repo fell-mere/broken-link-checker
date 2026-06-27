@@ -10,9 +10,15 @@ use craft\web\assets\cp\CpAsset;
  *
  * Bundles the page/widget styles and the index-page JavaScript so they're
  * served as static files instead of being inlined in the templates.
+ *
+ * @author Fell Mere
+ * @since 1.0.0
  */
 class BrokenLinksAsset extends AssetBundle
 {
+    // Public Methods
+    // =========================================================================
+
     /**
      * @inheritdoc
      */
