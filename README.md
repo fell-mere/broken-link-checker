@@ -16,6 +16,24 @@ A Craft CMS plugin that scans your site for broken links by crawling each entry'
 - **Export** — download results as a CSV
 - **Console command** — trigger scans from the CLI (useful for cron jobs)
 
+## Screenshots
+
+The Broken Links page in the Control Panel — start an incremental scan, force a full scan, open advanced options, or clear stored data:
+
+![Broken Links control panel](https://raw.githubusercontent.com/fell-mere/broken-link-checker/main/resources/screenshots/overview.png)
+
+Every broken link in the Control Panel, with its status, link text, page, and entry:
+
+![Broken links results in the Control Panel](https://raw.githubusercontent.com/fell-mere/broken-link-checker/main/resources/screenshots/results.png)
+
+The dashboard widget surfaces a count and the most recent broken links:
+
+![Broken Links dashboard widget](https://raw.githubusercontent.com/fell-mere/broken-link-checker/main/resources/screenshots/widget.png)
+
+Advanced options let you tune the batch size per queue job:
+
+![Advanced scan options](https://raw.githubusercontent.com/fell-mere/broken-link-checker/main/resources/screenshots/advanced.png)
+
 ## Installation
 
 #### With Composer
