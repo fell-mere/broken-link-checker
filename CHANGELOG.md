@@ -6,13 +6,17 @@
 - A `Manage broken links` user permission, now required to view the Control Panel page and run scans
 - Foreign key from broken-link rows to their entry, so records are cleared automatically when an entry is deleted
 
+### Removed
+- JSON export — CSV covers the broken-link reporting use case
+- The unused "Field" column from the results table and export (reserved for a future release)
+- The unused base-url scan option (the console `--base-url` flag and its plumbing); scans always crawl each entry's own URL
+
 ### Fixed
 - SSRF hardening: outbound link checks now refuse requests that resolve to private, loopback, link-local, or reserved IP ranges (the site's own hosts are still allowed), and redirects are validated per hop
 - Scan completion is now tracked with an atomic per-scan batch counter, so scans with multiple batches complete reliably under concurrent queue workers instead of finishing early
 - Broken-link totals are incremented atomically to prevent lost updates across concurrent workers
 - Link extraction now uses a real HTML parser (`DOMDocument`) instead of a regex, so single-quoted, unquoted, and otherwise non-standard `href`s are no longer missed
 - Clearing data while a scan is in progress is now blocked, preventing a running job from resurrecting a deleted scan record
-- JSON export no longer fails silently on malformed UTF-8 scraped from third-party pages
 
 ### Security
 - Control Panel and export endpoints now require the `Manage broken links` permission

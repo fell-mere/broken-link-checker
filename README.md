@@ -13,7 +13,7 @@ A Craft CMS plugin that scans your site for broken links by crawling each entry'
 - **Incremental scans** — by default only re-scans entries updated since the last completed scan; force a full scan when needed
 - **Configurable batch size** — control how many entries are processed per queue job
 - **Dashboard widget** — shows a summary of broken links on the Craft dashboard
-- **Export** — download results as CSV or JSON
+- **Export** — download results as a CSV
 - **Console command** — trigger scans from the CLI (useful for cron jobs)
 
 ## Installation
@@ -42,7 +42,7 @@ Navigate to **Broken Links** in the CP sidebar. Access requires the **Manage bro
 | View Queue | Opens the Craft queue manager to monitor progress |
 | Clear All Data | Deletes all stored broken link records and scan history |
 
-Results can be exported as **CSV** or **JSON** from the results table.
+Results can be exported as a **CSV** from the results table.
 
 ### Console
 

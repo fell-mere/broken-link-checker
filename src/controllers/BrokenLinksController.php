@@ -185,68 +185,36 @@ class BrokenLinksController extends Controller
     }
 
     /**
-     * Exports the broken-link results as a downloadable CSV or JSON file.
-     *
-     * @throws \RuntimeException if the results cannot be encoded as JSON.
+     * Exports the broken-link results as a downloadable CSV file.
      */
     public function actionExport(): Response
     {
-        $format = Craft::$app->request->getQueryParam('format', 'csv');
         $brokenLinks = Plugin::getInstance()->getBrokenLinks()->getLatestBrokenLinks(null);
 
-        $fileName = 'broken-links-' . date('Y-m-d-His');
+        $fileName = 'broken-links-' . date('Y-m-d-His') . '.csv';
 
-        if ($format === 'json') {
-            $fileName .= '.json';
-
-            $data = [];
-            foreach ($brokenLinks as $link) {
-                $data[] = [
-                    'url' => $link->url,
-                    'status' => $link->status,
-                    'statusCode' => $link->statusCode,
-                    'linkText' => $link->linkText,
-                    'pageUrl' => $link->pageUrl,
-                    'entryId' => $link->entryId,
-                    'entryTitle' => $link->entryTitle,
-                    'lastScanned' => $link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : null,
-                ];
-            }
-
-            // JSON_INVALID_UTF8_SUBSTITUTE keeps the export from silently
-            // failing on malformed bytes scraped from third-party pages.
-            $content = json_encode($data, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
-            if ($content === false) {
-                throw new \RuntimeException('Failed to encode broken links as JSON: ' . json_last_error_msg());
-            }
-            $mimeType = 'application/json';
-        } else {
-            $fileName .= '.csv';
-
-            $fh = fopen('php://temp', 'r+');
-            fputcsv($fh, ['URL', 'Status', 'Status Code', 'Link Text', 'Page URL', 'Entry ID', 'Entry Title', 'Last Scanned']);
-            foreach ($brokenLinks as $link) {
-                fputcsv($fh, [
-                    $link->url,
-                    $link->status,
-                    $link->statusCode,
-                    $link->linkText,
-                    $link->pageUrl,
-                    $link->entryId,
-                    $link->entryTitle,
-                    $link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : '',
-                ]);
-            }
-            rewind($fh);
-            $content = stream_get_contents($fh);
-            fclose($fh);
-            $mimeType = 'text/csv';
+        $fh = fopen('php://temp', 'r+');
+        fputcsv($fh, ['URL', 'Status', 'Status Code', 'Link Text', 'Page URL', 'Entry ID', 'Entry Title', 'Last Scanned']);
+        foreach ($brokenLinks as $link) {
+            fputcsv($fh, [
+                $link->url,
+                $link->status,
+                $link->statusCode,
+                $link->linkText,
+                $link->pageUrl,
+                $link->entryId,
+                $link->entryTitle,
+                $link->lastScanned ? date('Y-m-d H:i:s', strtotime($link->lastScanned)) : '',
+            ]);
         }
+        rewind($fh);
+        $content = stream_get_contents($fh);
+        fclose($fh);
 
         $response = Craft::$app->getResponse();
         $response->content = $content;
         $response->format = Response::FORMAT_RAW;
-        $response->headers->set('Content-Type', $mimeType);
+        $response->headers->set('Content-Type', 'text/csv');
         $response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
 
         return $response;

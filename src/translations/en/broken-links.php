@@ -46,7 +46,6 @@ return [
     
     // Export
     'Export CSV' => 'Export CSV',
-    'Export JSON' => 'Export JSON',
     
     // Messages
     'No broken links found in the last scan.' => 'No broken links found in the last scan.',

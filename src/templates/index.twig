@@ -107,11 +107,8 @@
                 </h2>
 
                 <div class="export-buttons">
-                    <a href="{{ cpUrl('brokenlinks/export', {'format': 'csv'}) }}" class="btn secondary" download>
+                    <a href="{{ cpUrl('brokenlinks/export') }}" class="btn secondary" download>
                         <span data-icon="download"></span> {{ "Export CSV"|t('broken-links') }}
-                    </a>
-                    <a href="{{ cpUrl('brokenlinks/export', {'format': 'json'}) }}" class="btn secondary" download>
-                        <span data-icon="download"></span> {{ "Export JSON"|t('broken-links') }}
                     </a>
                 </div>
 
