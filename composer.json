@@ -3,8 +3,21 @@
   "description": "Scans your Craft CMS site for broken links and displays results in the Control Panel.",
   "type": "craft-plugin",
   "license": "proprietary",
+  "homepage": "https://github.com/fell-mere/broken-link-checker",
+  "keywords": [
+    "craft",
+    "cms",
+    "craftcms",
+    "craft-plugin",
+    "broken links",
+    "link checker",
+    "seo"
+  ],
   "support": {
-    "email": "craig@honcho.agency"
+    "email": "craig@honcho.agency",
+    "issues": "https://github.com/fell-mere/broken-link-checker/issues",
+    "source": "https://github.com/fell-mere/broken-link-checker",
+    "docs": "https://github.com/fell-mere/broken-link-checker/blob/develop/README.md"
   },
   "require": {
     "php": ">=8.2",
@@ -24,7 +37,8 @@
     "name": "Broken Links",
     "developer": "Fell Mere",
     "developerUrl": "https://github.com/fell-mere",
-    "documentationUrl": "https://github.com/fell-mere/broken-link-checker"
+    "documentationUrl": "https://github.com/fell-mere/broken-link-checker",
+    "changelogUrl": "https://raw.githubusercontent.com/fell-mere/broken-link-checker/develop/CHANGELOG.md"
   },
   "scripts": {
     "check-cs": "ecs check --ansi",
