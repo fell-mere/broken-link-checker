@@ -59,6 +59,7 @@ class GenerateSitemapJob extends BaseJob
             $entryQuery = Entry::find();
 
             if (!$this->forceFullScan) {
+                /** @var ScanHistoryRecord|null $lastScan */
                 $lastScan = ScanHistoryRecord::find()
                     ->where(['status' => ScanHistoryRecord::STATUS_COMPLETED])
                     ->orderBy(['endTime' => SORT_DESC])

@@ -21,7 +21,7 @@ class BrokenLinksController extends Controller
     // =========================================================================
 
     /**
-     * @var array|int|bool The action(s) accessible anonymously; none here.
+     * @inheritdoc
      */
     protected array|int|bool $allowAnonymous = [];
 

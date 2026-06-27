@@ -297,9 +297,10 @@ class CheckBrokenLinksJob extends BaseJob
     private function saveBrokenLink(array $data): array
     {
         try {
-            $existingRecord = BrokenLinkRecord::find()
-                ->where(['url' => $data['url'], 'pageUrl' => $data['pageUrl']])
-                ->one();
+            $existingRecord = BrokenLinkRecord::findOne([
+                'url' => $data['url'],
+                'pageUrl' => $data['pageUrl'],
+            ]);
 
             if ($existingRecord) {
                 $existingRecord->status = $data['status'];

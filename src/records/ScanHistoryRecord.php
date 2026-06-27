@@ -7,15 +7,18 @@ use craft\db\ActiveRecord;
 /**
  * ScanHistoryRecord represents a link scan history record.
  *
+ * Datetime columns are returned as strings when loaded from the database, but
+ * may hold a \DateTime instance when set in memory before saving.
+ *
  * @property int $id
- * @property \DateTime $startTime
- * @property \DateTime|null $endTime
+ * @property \DateTime|string $startTime
+ * @property \DateTime|string|null $endTime
  * @property int $totalUrlsScanned
  * @property int $totalBrokenLinks
  * @property int $completedBatches
  * @property string $status
- * @property \DateTime $dateCreated
- * @property \DateTime $dateUpdated
+ * @property \DateTime|string $dateCreated
+ * @property \DateTime|string $dateUpdated
  * @property string $uid
  *
  * @author Fell Mere

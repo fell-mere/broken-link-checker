@@ -77,7 +77,7 @@ class BrokenLinksController extends Controller
             $startTime = time();
             $completed = false;
 
-            while (!$completed && (time() - $startTime) < $this->timeout) {
+            while ((time() - $startTime) < $this->timeout) {
                 $scanRecord = ScanHistoryRecord::findOne($scanId);
 
                 if (!$scanRecord) {
