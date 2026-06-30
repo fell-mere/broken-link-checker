@@ -12,9 +12,11 @@ use craft\events\RegisterUserPermissionsEvent;
 use craft\i18n\PhpMessageSource;
 use craft\services\Dashboard;
 use craft\services\UserPermissions;
+use craft\helpers\UrlHelper;
 use craft\web\twig\variables\Cp;
 use craft\web\UrlManager;
 use craigclement\craftbrokenlinks\console\controllers\BrokenLinksController as ConsoleBrokenLinksController;
+use craigclement\craftbrokenlinks\models\Settings;
 use craigclement\craftbrokenlinks\services\BrokenLinksService;
 use craigclement\craftbrokenlinks\widgets\BrokenLinksWidget;
 use yii\base\Event;
@@ -51,7 +53,7 @@ class Plugin extends BasePlugin
     /**
      * @var bool Whether the plugin has control-panel settings.
      */
-    public bool $hasCpSettings = false;
+    public bool $hasCpSettings = true;
 
     // Public Methods
     // =========================================================================
@@ -85,6 +87,8 @@ class Plugin extends BasePlugin
                 $event->rules['brokenlinks/scan-status'] = 'brokenlinks/broken-links/scan-status';
                 $event->rules['brokenlinks/clear-data'] = 'brokenlinks/broken-links/clear-data';
                 $event->rules['brokenlinks/export'] = 'brokenlinks/broken-links/export';
+                $event->rules['brokenlinks/settings'] = 'brokenlinks/broken-links/settings';
+                $event->rules['brokenlinks/ignore-url'] = 'brokenlinks/broken-links/ignore-url';
             }
         );
 
@@ -142,6 +146,25 @@ class Plugin extends BasePlugin
         /** @var BrokenLinksService $service */
         $service = $this->get('brokenLinks');
         return $service;
+    }
+
+    // Protected Methods
+    // =========================================================================
+
+    /**
+     * @inheritdoc
+     */
+    public function getSettingsResponse(): mixed
+    {
+        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('brokenlinks/settings'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function createSettingsModel(): Settings
+    {
+        return new Settings();
     }
 
     // Private Methods
