@@ -146,6 +146,56 @@
             });
     }
 
+    // Ignore-URL buttons — delegate to handle rows added after page load.
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.ignore-url-btn');
+        if (!btn || !config.ignoreUrlUrl) {
+            return;
+        }
+
+        var url = btn.getAttribute('data-url');
+        if (!url) {
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = t('Ignoring...');
+
+        fetch(config.ignoreUrlUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': Craft.csrfTokenValue,
+            },
+            body: JSON.stringify({ url: url }),
+        })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                if (data.success) {
+                    // Remove every row whose URL contains the ignored domain.
+                    document.querySelectorAll('.ignore-url-btn').forEach(function (b) {
+                        if ((b.getAttribute('data-url') || '').indexOf(data.pattern) !== -1) {
+                            var row = b.closest('tr');
+                            if (row) {
+                                row.remove();
+                            }
+                        }
+                    });
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = 'Ignore';
+                    alert(t('Failed to add to ignore list.') + (data.message ? ' ' + data.message : ''));
+                }
+            })
+            .catch(function (error) {
+                btn.disabled = false;
+                btn.textContent = 'Ignore';
+                alert(t('Failed to add to ignore list.') + ' ' + error.message);
+            });
+    });
+
     // Poll for an in-progress scan and reload when it finishes.
     if (config.activeScanId) {
         loading.textContent = t('A scan is currently in progress...');

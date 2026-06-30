@@ -7,6 +7,8 @@ use craft\elements\Entry;
 use craft\helpers\Db;
 use craft\queue\BaseJob;
 use craigclement\craftbrokenlinks\helpers\UrlSafety;
+use craigclement\craftbrokenlinks\models\Settings;
+use craigclement\craftbrokenlinks\Plugin;
 use craigclement\craftbrokenlinks\records\BrokenLinkRecord;
 use craigclement\craftbrokenlinks\records\ScanHistoryRecord;
 use GuzzleHttp\Client;
@@ -197,6 +199,11 @@ class CheckBrokenLinksJob extends BaseJob
                     continue;
                 }
 
+                // Skip links the operator has explicitly chosen to ignore.
+                if ($this->_isIgnored($absoluteUrl)) {
+                    continue;
+                }
+
                 try {
                     $headResponse = $client->head($absoluteUrl, [
                         'allow_redirects' => [
@@ -241,6 +248,39 @@ class CheckBrokenLinksJob extends BaseJob
         }
 
         return $brokenLinks;
+    }
+
+    /**
+     * Determines whether the given URL matches one of the operator-configured
+     * ignore patterns and should therefore be skipped during the scan.
+     *
+     * @param string $url The absolute URL to test.
+     * @return bool Whether the URL should be ignored.
+     */
+    private function _isIgnored(string $url): bool
+    {
+        $plugin = Plugin::getInstance();
+
+        if ($plugin === null) {
+            return false;
+        }
+
+        /** @var Settings $settings */
+        $settings = $plugin->getSettings();
+
+        foreach ($settings->ignoredUrlPatterns as $pattern) {
+            $pattern = trim($pattern);
+
+            if ($pattern === '') {
+                continue;
+            }
+
+            if (stripos($url, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

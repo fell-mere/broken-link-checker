@@ -62,4 +62,19 @@ return [
     'Batch Size' => 'Batch Size',
     'Maximum number of entries to process in each batch' => 'Maximum number of entries to process in each batch',
     'Hide Advanced Options' => 'Hide Advanced Options',
+
+    // Ignore list
+    'Ignore' => 'Ignore',
+    'Ignore all links from this domain' => 'Ignore all links from this domain',
+    'Ignoring...' => 'Ignoring...',
+    'Failed to add to ignore list.' => 'Failed to add to ignore list.',
+
+    // Ignore list settings
+    'Ignore List' => 'Ignore List',
+    'Broken Links Ignore List' => 'Broken Links Ignore List',
+    'Ignored URL patterns' => 'Ignored URL patterns',
+    'One pattern per line. Any broken link URL containing the pattern will be skipped. Example: twitter.com, facebook.com.' => 'One pattern per line. Any broken link URL containing the pattern will be skipped. Example: twitter.com, facebook.com.',
+    'Save' => 'Save',
+    'Settings saved.' => 'Settings saved.',
+    'Couldn’t save settings.' => 'Couldn’t save settings.',
 ];
